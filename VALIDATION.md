@@ -1,8 +1,57 @@
-# Validation status — 0.3.0
+# Validation status — 0.3.2
 
 Designed for Claude Code + Opus 5.5. Other hosts are unverified.
 Style references, the cinematic treatment and the 3D starter scene are guidance, not
 proof of quality.
+
+## 0.3.2: served-root default and music reference images, macOS, 2026-09-27 (Apple M4 Pro, Node 24.3, FFmpeg 7.1.1, Playwright 1.63.0)
+
+`npm test`: **20 pass, 0 fail, 0 skipped** (the seventeen 0.3.0 tests unchanged, three new).
+
+Renderer default root (`tests/render.test.mjs`, new test):
+
+- Run from `project/` with `--input scene/scene.html` and no `--root`, a scene loading
+  `../inputs/assets/green.png` renders; the sampled pixel is the asset's green and the
+  result JSON reports `root_source: "cwd"`. Run from an unrelated folder, the root falls
+  back to the scene's folder and the same image fails to decode. An implicit root is never
+  the filesystem root.
+- Manual: an earlier pixel-retro scene that loads `../../inputs/book-cover.png` rendered
+  a still from its run folder without `--root`; with the 0.3.1 default (scene folder) it
+  failed with the same decode error.
+
+Music reference images (`tests/audio.test.mjs`, two new offline tests): image type read
+from file bytes (PNG, JPEG, WebP; other files refused), sha256 recorded, at most 10;
+OpenRouter body carries `image_url` data URLs after the text, Gemini body carries
+`{type: "image", mime_type, data}` blocks; without references both keep the plain text
+prompt; `--dry-run` omits image bytes; Gemini response parsing; missing `GEMINI_API_KEY`
+and `--seed` with Gemini fail clearly.
+
+Request shapes were taken from the providers' documentation on 2026-09-27, not guessed:
+OpenRouter `/api/v1/models` lists `input_modalities: ["text", "image"]` for
+`google/lyria-3-clip-preview` and `google/lyria-3-pro-preview`, and its image-input guide
+gives the `image_url` content part; the Gemini music-generation guide documents
+`POST /v1beta/interactions` with up to 10 images in `input` and audio in
+`steps[].content[]`.
+
+Three paid calls, same text (cinematic underscore for a short book promo, confident and
+building, 100 BPM, 30 s), references = three 1280×720 JPEG frames from the cinematic 3D
+showcase film at 3, 13 and 24 s:
+
+| Run | Provider / model | References | Returned | Measured tempo | Integrated loudness | Cost |
+|---|---|---|---|---:|---:|---|
+| A | OpenRouter `google/lyria-3-clip-preview`, seed 7 | none | 30.77 s MP3 | 99.91 BPM | −11.5 LUFS | US$0.0396 reported |
+| B | OpenRouter `google/lyria-3-clip-preview`, seed 7 | 3 | 30.77 s MP3 | 100.01 BPM | −11.9 LUFS | US$0.0396 reported |
+| C | Gemini API `lyria-3-clip-preview` | 3 | 29.20 s MP3 | 99.99 BPM | −12.0 LUFS | US$0.04 listed (no cost in response) |
+
+The images reached the model: OpenRouter's prompt tokens rose from 73 (A) to 4448 (B) at
+the same cost, and Gemini's usage reported 774 image input tokens (C). The three files
+differ. Run C came back 0.8 s short of 30 s; `music.json` recorded the warning and the WAV
+was not padded. Each `music.json` names the provider, model, prompt and each reference
+file with its sha256.
+
+Not auditioned: nobody listened to A, B or C for this validation. Whether references make
+the music fit the picture better is a listening judgment, and one call per condition
+cannot separate the effect of the images from run-to-run variation.
 
 ## Showcase samples (2026-09-27)
 
@@ -133,4 +182,5 @@ disclosure. These are document checks, not proof that a model will follow them.
 One cinematic piece has been made end to end (voice + real assets + generated music +
 effects, 0.3.0, the cinematic 3D showcase sample). Installation on another machine, other
 hosts, Windows/Linux, automatic style selection, `brand.json` fields beyond
-`display_name`, the Pro music model and most visual styles remain unverified.
+`display_name`, the Pro and `lyria-3.5` music models, whether reference images audibly
+improve the fit, and most visual styles remain unverified.

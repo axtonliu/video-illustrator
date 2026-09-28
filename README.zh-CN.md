@@ -57,7 +57,7 @@
 - Node.js 20 或更新
 - PATH 中的 FFmpeg 和 ffprobe
 - Playwright Chromium（下面的命令会安装）
-- 可选，生成配乐：环境变量里放你自己的 `OPENROUTER_API_KEY`。配乐来自 OpenRouter 上的 Google Lyria 3，付费调用，约 0.04 美元/30 秒，只在你授权时调用。音效在本地程序合成，不收费。也可以让 Skill 从你已有的曲库里选。
+- 可选，生成配乐：环境变量里放你自己的 `OPENROUTER_API_KEY`。配乐来自 OpenRouter 上的 Google Lyria 3，付费调用，约 0.04 美元/30 秒，只在你授权时调用。音效在本地程序合成，不收费。也可以让 Skill 从你已有的曲库里选。生成配乐时可以把关键帧或素材图作为参考图一起传给模型（最多 10 张），让音乐贴合画面；也可以改用 Gemini API（`GEMINI_API_KEY`）。
 
 保持 `video-illustrator` 文件夹完整，放到 Skill 目录（Claude Code 项目级目录为 `.claude/skills/video-illustrator/`，或用 symlink 指向你的源码位置），然后在 Skill 文件夹运行：
 

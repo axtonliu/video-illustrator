@@ -57,7 +57,7 @@ Requirements:
 - Node.js 20 or newer
 - FFmpeg and ffprobe on your PATH
 - Playwright Chromium (installed below)
-- Optional, for generated music: your own `OPENROUTER_API_KEY` in the environment. Music comes from Google Lyria 3 through OpenRouter, a paid call of about US$0.04 per 30-second clip, made only when you authorize it. Sound effects are synthesized locally for free. You can also point the Skill at music you already have.
+- Optional, for generated music: your own `OPENROUTER_API_KEY` in the environment. Music comes from Google Lyria 3 through OpenRouter, a paid call of about US$0.04 per 30-second clip, made only when you authorize it. Sound effects are synthesized locally for free. You can also point the Skill at music you already have. Keyframes or asset images can be sent as reference images with the music request (up to 10) so the score follows the picture; the Gemini API (`GEMINI_API_KEY`) is supported as an alternative provider.
 
 Keep the `video-illustrator` folder intact and place it in your skill directory (for Claude Code, project-local `.claude/skills/video-illustrator/`, or a symlink to your checkout). Then, from the skill folder:
 

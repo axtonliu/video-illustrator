@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, readFile, readdir, rm, writeFile, symlink } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile, symlink } from 'node:fs/promises';
+import { resolveRoot } from '../scripts/render.mjs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -133,4 +134,34 @@ test('SIGINT and SIGTERM mid-render remove the staging folder and exit with the 
     assert.deepEqual(await staging(), []);
     assert.ok(!(await readdir(directory)).includes('long.mp4'));
   }
+});
+
+test('default root is the working directory when the scene is inside it, so ../assets loads without --root', async t => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'video illustrator cwd root '));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const project = path.join(directory, 'project');
+  await mkdir(path.join(project, 'scene'), { recursive: true });
+  await mkdir(path.join(project, 'inputs', 'assets'), { recursive: true });
+  await exec('ffmpeg', ['-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=0x00ff00:s=16x16', '-frames:v', '1', path.join(project, 'inputs', 'assets', 'green.png')]);
+  const html = path.join(project, 'scene', 'scene.html');
+  await writeFile(html, `<body style="margin:0;background:#000"><img src="../inputs/assets/green.png" style="display:block;width:160px;height:90px"><script>
+    window.renderFrame = async () => {};
+  </script>`);
+  const output = path.join(project, 'still.png');
+  const args = [renderer, '--input', 'scene/scene.html', '--output', output, '--still', '0', '--width', '160', '--height', '90'];
+  const result = JSON.parse((await exec(process.execPath, args, { cwd: project })).stdout);
+  assert.equal(result.root_source, 'cwd');
+  assert.equal(result.root, await realpath(project));
+  const { stdout } = await exec('ffmpeg', ['-v', 'error', '-i', output, '-vf', 'crop=1:1:80:45,format=rgb24', '-f', 'rawvideo', '-'], { encoding: 'buffer' });
+  const [r, g, b] = [...stdout];
+  assert.ok(r < 8 && g > 245 && b < 8, `expected the green asset, got ${[r, g, b]}`);
+  // Run from a folder that does not contain the scene: the root falls back to the scene's
+  // folder, ../inputs is outside it and the image cannot load.
+  const elsewhere = await mkdtemp(path.join(tmpdir(), 'video illustrator elsewhere '));
+  t.after(() => rm(elsewhere, { recursive: true, force: true }));
+  await assert.rejects(exec(process.execPath, [renderer, '--input', html, '--output', path.join(project, 'fallback.png'), '--still', '0', '--width', '160', '--height', '90'], { cwd: elsewhere }), /cannot be decoded/);
+  const fallback = await resolveRoot(await realpath(html), undefined, elsewhere);
+  assert.deepEqual(fallback, { root: await realpath(path.join(project, 'scene')), rootSource: 'scene' });
+  // The filesystem root is never an implicit served root.
+  assert.equal((await resolveRoot(await realpath(html), undefined, '/')).rootSource, 'scene');
 });

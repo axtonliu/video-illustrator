@@ -13,7 +13,8 @@ Video: node scripts/render.mjs --input scene.html --output clip.mp4 --duration 8
 Still: node scripts/render.mjs --input scene.html --output preview.png --still 2.5
 
 Options: --width 1280 --height 720 --fps 30 --audio existing.wav --overwrite
-         --root <dir>    folder served to the page (default: the scene's folder)
+         --root <dir>    folder served to the page (default: the current working directory
+                         when the scene is inside it, otherwise the scene's folder)
          --query <q>     query string appended to the scene URL (e.g. subframes=8)
          --gpu           ask Chromium for the hardware GPU (macOS: ANGLE Metal)
          --file-url      legacy: open the scene as file:// instead of the local server
@@ -176,11 +177,23 @@ function run(command, args, captureOutput = false) {
   });
 }
 
+// Default served root: the working directory when the scene lies inside it (so a scene in a
+// subfolder can reach sibling folders such as ../inputs/assets), otherwise the scene's folder.
+// The filesystem root is never chosen implicitly.
+export async function resolveRoot(input, explicitRoot, cwd = process.cwd()) {
+  if (explicitRoot !== undefined) return { root: await realpath(path.resolve(explicitRoot)), rootSource: 'flag' };
+  const workingDirectory = await realpath(cwd).catch(() => null);
+  if (workingDirectory && workingDirectory !== path.parse(workingDirectory).root && input.startsWith(workingDirectory + path.sep)) {
+    return { root: workingDirectory, rootSource: 'cwd' };
+  }
+  return { root: path.dirname(input), rootSource: 'scene' };
+}
+
 export async function render(opts) {
   const input = await realpath(path.resolve(opts.input));
   const output = path.resolve(opts.output);
   if (!(await stat(input)).isFile()) throw Error('--input must be an HTML file.');
-  const root = opts.fileUrl ? undefined : await realpath(path.resolve(opts.root ?? path.dirname(input)));
+  const { root, rootSource } = opts.fileUrl ? {} : await resolveRoot(input, opts.root);
   if (root) {
     if (!(await stat(root)).isDirectory()) throw Error('--root must be a folder.');
     if (!input.startsWith(root + path.sep)) throw Error(`--input must be inside --root (${root}).`);
@@ -307,7 +320,7 @@ export async function render(opts) {
     // Publish only a complete result. link() atomically refuses a concurrently-created output.
     if (opts.overwrite) await rename(staged, output);
     else await link(staged, output);
-    const renderer = { gl_renderer: glRenderer, gpu_requested: Boolean(opts.gpu), software_gl: softwareGl, served: root ? 'http' : 'file', timing };
+    const renderer = { gl_renderer: glRenderer, gpu_requested: Boolean(opts.gpu), software_gl: softwareGl, served: root ? 'http' : 'file', ...(root ? { root, root_source: rootSource } : {}), timing };
     return { output, width: opts.width, height: opts.height, ...(still ? { time: opts.still } : { fps: opts.fps, frames: count, duration: count / opts.fps, audio: Boolean(opts.audio) }), ...renderer, warnings };
   } finally {
     if (browser) await browser.close().catch(() => {});

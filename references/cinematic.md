@@ -36,16 +36,21 @@ black, no establishing drift. If the first frame alone could open any other vide
 
 ## Music first, picture on the grid
 
-1. Decide the music before the timeline: generate or choose a track, then measure its
+1. Make 3–4 keyframe stills first (opening, turn, payoff, end card), or take the key
+   images from `inputs/assets/`. When music is generated, pass them to
+   `scripts/music.mjs` with `--ref` so the track follows the picture's mood, colour
+   temperature and texture instead of a generic trailer bed. References steer style
+   only; they do not make the music land on cuts.
+2. Decide the music before the timeline: generate or choose a track, then measure its
    real tempo and beats with `scripts/beats.mjs`. A requested BPM is a hope; the
-   measured grid is the contract.
-2. Lay the narration on that grid (see [rendering.md](rendering.md#audio-first-workflow)).
+   measured grid is the contract, and it is what the cuts are timed to.
+3. Lay the narration on that grid (see [rendering.md](rendering.md#audio-first-workflow)).
    Place the main sections so that big changes land on downbeats and key words fall on
    or just after a strong beat.
-3. Only then write the scene. Keep one timeline object in `scene.html` holding section
+4. Only then write the full scene. Keep one timeline object in `scene.html` holding section
    starts, beat times and hit points, and derive every animation time from it. Do not
    type ad hoc seconds into individual animations.
-4. Cut and hit on strong beats, but not on every beat. Give the viewer time to read what
+5. Cut and hit on strong beats, but not on every beat. Give the viewer time to read what
    matters; a film that changes on each beat reads as noise.
 
 ## Every visible action has a sound

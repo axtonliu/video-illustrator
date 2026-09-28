@@ -36,7 +36,7 @@ If `node --version` fails, the JS check cannot run: still read both FFmpeg check
 
 Create a complete local `scene.html`. Use Canvas 2D, SVG, CSS or a combination for the 2D route, or three.js for the [3D route](#3d-route-threejs). No framework is required. Use local assets or system fonts when appropriate; avoid remote font/image dependencies that can change or fail during export.
 
-The renderer serves the page from a private `http://127.0.0.1` server on a random port, closed after the render. It serves the scene's folder, or `--root <dir>` when the scene references files above its folder (for example `--root project/` so `scene/scene.html` can load `../inputs/assets/cover.png`). Files outside that root are refused. Because images come from the same origin, a canvas that draws them can still call `getImageData`; under `file://` Chromium taints such a canvas and `getImageData` throws. `--file-url` keeps the old `file://` loading for a scene that depends on it. Before scripts run, the page receives `window.videoIllustrator = {fps, width, height}`, and `--query "a=1&b=2"` appends a query string the scene can read.
+The renderer serves the page from a private `http://127.0.0.1` server on a random port, closed after the render. By default it serves the current working directory when the scene is inside it, otherwise the scene's own folder; so running from `project/`, `scene/scene.html` can load `../inputs/assets/cover.png` without extra flags. Pass `--root <dir>` to choose the served folder explicitly (the scene must be inside it). The result JSON reports `root` and `root_source` (`cwd`, `scene` or `flag`). Files outside the root and path traversal are refused, and the filesystem root is never chosen implicitly. Because images come from the same origin, a canvas that draws them can still call `getImageData`; under `file://` Chromium taints such a canvas and `getImageData` throws. `--file-url` keeps the old `file://` loading for a scene that depends on it. Before scripts run, the page receives `window.videoIllustrator = {fps, width, height}`, and `--query "a=1&b=2"` appends a query string the scene can read.
 
 Expose `window.renderFrame = async function (t) { ... }`, where `t` is absolute seconds. Each call must fully reconstruct the frame from `t`: no dependence on previously rendered frames, `Date.now()`, requestAnimationFrame clocks or unseeded per-frame random values. Reset the canvas/scene before drawing. Derive repeated texture randomness from stable object IDs. Async image readiness must complete before rendering. The renderer waits for fonts and awaits this function.
 
@@ -140,28 +140,45 @@ For a promo or cinematic piece, sound comes before picture:
 1. **Narration.** Use the user's recording from `inputs/voice/` and measure it with
    ffprobe. If `inputs/voice/` also holds an `.srt` or `words.json` with word times,
    use those times for text hits; otherwise align by listening points you can verify.
-2. **Music.** Use user-supplied music, or generate a bed when the user has authorized
-   the paid call. `music.mjs` calls Google Lyria 3 through OpenRouter (about US$0.04 per
-   30-second clip; longer requests use the Pro model, listed at US$0.08 per song) and
-   reads `OPENROUTER_API_KEY` from the environment. Check the request with `--dry-run`.
+   Speech-recognition word times often start early (a measured case ran 0.05–0.44 s
+   early at phrase starts while phrase ends were accurate), so check each phrase start
+   against the waveform (an RMS envelope or `ffmpeg -af silencedetect`) and use the
+   measured onset for subtitle-in and visual hits. Do not shift the whole file by one offset.
+2. **Keyframes.** Export 3–4 stills of the planned picture (opening, turn, payoff, end
+   card) with `--still`, or pick the key images from `inputs/assets/`. They are checked
+   as drafts (see [drafts and keyframes](#drafts-and-keyframes-before-the-full-render))
+   and become the music's reference images.
+3. **Music.** Use user-supplied music, or generate a bed when the user has authorized
+   the paid call. `music.mjs` calls Google Lyria through OpenRouter by default
+   (`OPENROUTER_API_KEY`; about US$0.04 per 30-second clip, longer requests use the Pro
+   model, listed at US$0.08 per song) or the Gemini API with `--provider gemini`
+   (`GEMINI_API_KEY`; same listed prices, longer requests use `lyria-3.5`). Pass the
+   keyframes with `--ref` (repeatable, at most 10; PNG, JPEG or WebP) so the music takes
+   its mood, colour temperature and texture from the picture. Check the request with
+   `--dry-run` (image bytes are omitted from its output).
    ```sh
-   node scripts/music.mjs --out /path/to/project/audio --style "felt piano, brushed snare, upright bass" --mood "warm, curious" --bpm 96 --duration 30
+   node scripts/music.mjs --out /path/to/project/audio --style "felt piano, brushed snare, upright bass" --mood "warm, curious" --bpm 96 --duration 30 \
+     --ref /path/to/project/keyframes/opening.jpg --ref /path/to/project/keyframes/turn.jpg --ref /path/to/project/keyframes/end.jpg
    ```
    It writes the returned file (MP3 from Lyria), a trimmed 48 kHz `music.wav` and
-   `music.json` with model, prompt, time and the cost OpenRouter reported.
-3. **Beat grid.** Measure the actual music, never trust the requested tempo:
+   `music.json` with provider, model, prompt, reference file names with sha256, time and
+   the cost basis (OpenRouter reports `usage.cost`; Gemini returns no cost, so the listed
+   price is recorded). References only shape style; they do not synchronise the music to
+   picture changes, and the Gemini clip may come back slightly shorter than 30 s (a test
+   returned 29.2 s; `music.json` warns). Picture timing comes from the next step.
+4. **Beat grid.** Measure the actual music, never trust the requested tempo:
    ```sh
    node scripts/beats.mjs --input /path/to/project/audio/music.wav --output /path/to/project/audio/beats.json
    ```
    `beats.json` has `bpm`, `beats[]`, `downbeats[]` (meter assumed 4/4; treat the phase
    as a guess when `downbeat_confidence` is close to 1.0) and `strong_onsets[]`.
-4. **Timeline.** Copy the beat times you use into the scene's timeline object and derive
+5. **Timeline.** Copy the beat times you use into the scene's timeline object and derive
    animation times from it; decide where narration starts so its key words sit on beats.
-5. **Sound effects.** Generate starter effects and place one per visible action:
+6. **Sound effects.** Generate starter effects and place one per visible action:
    ```sh
    node scripts/sfx.mjs --out /path/to/project/audio/sfx
    ```
-6. **Mix**, then render the picture with `--audio mix.wav`. Example with narration
+7. **Mix**, then render the picture with `--audio mix.wav`. Example with narration
    starting at 0.5 s, music ducked under the voice, two effects on beats, and loudness
    normalized to about −14 LUFS:
    ```sh
