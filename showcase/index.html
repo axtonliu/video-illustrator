@@ -46,7 +46,10 @@
   .note { margin: 0; padding: 8px 10px; background: var(--note-bg); border: 1px solid var(--note-line); border-radius: 8px; font-size: 14px; }
   .actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 4px; }
   .copy { border: 0; background: var(--accent); color: var(--accent-text); padding: 8px 14px; border-radius: 8px; font: inherit; font-size: 15px; cursor: pointer; }
-  .copy:focus-visible, .lang button:focus-visible, summary:focus-visible { outline: 3px solid #f0b429; outline-offset: 2px; }
+  .platforms { display: flex; flex-wrap: wrap; gap: 8px; }
+  .platform-link { display: inline-block; border: 1px solid var(--accent); color: var(--accent); background: transparent; padding: 7px 13px; border-radius: 8px; font-size: 14px; text-decoration: none; }
+  .platform-link:hover { background: var(--accent); color: var(--accent-text); }
+  .copy:focus-visible, .lang button:focus-visible, summary:focus-visible, .platform-link:focus-visible { outline: 3px solid #f0b429; outline-offset: 2px; }
   .status { font-size: 14px; color: var(--muted); }
   textarea.fallback { width: 100%; min-height: 120px; font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; border: 1px solid var(--line); border-radius: 8px; padding: 8px; resize: vertical; color: var(--text); background: #fffdf8; }
   details { font-size: 14px; color: var(--muted); }
@@ -75,8 +78,8 @@
   <section class="grid" id="grid" aria-label="Samples"></section>
 
   <footer>
-    <p class="zh">完整视频将放在 GitHub Releases。本地查看时，把六个 MP4 放进 <code>showcase/videos/</code>（文件名见 <code>videos/README.md</code>）。样片、预览与封面帧包含作者本人的声音、书封和授权配乐，仅作展示，不在 MIT 许可范围内。</p>
-    <p class="en">The full videos will be attached to GitHub Releases. To view locally, put the six MP4 files in <code>showcase/videos/</code> (names in <code>videos/README.md</code>). The films, previews and posters contain the author's voice, book cover and licensed music; they are for demonstration only and not covered by the MIT license.</p>
+    <p class="zh">完整视频发布在 YouTube 与 B 站（见每张卡片下方的链接），本仓库不以可下载文件的形式提供 MP4。本地预览时可以把六个 MP4 放进 <code>showcase/videos/</code>（文件名见 <code>videos/README.md</code>）。样片、预览与封面帧包含作者本人的声音、书封和授权配乐，仅作展示，不在 MIT 许可范围内。</p>
+    <p class="en">The full videos are published on YouTube and Bilibili (see the links under each card); this repository does not distribute the MP4 files. For local preview, put the six MP4 files in <code>showcase/videos/</code> (names in <code>videos/README.md</code>). The films, previews and posters contain the author's voice, book cover and licensed music; they are for demonstration only and not covered by the MIT license.</p>
   </footer>
 </main>
 
@@ -92,26 +95,31 @@
       name: { zh: "剪纸拼贴", en: "Cut paper" },
       fit: { zh: "温暖、有手作感的故事，纸张层层叠叠。", en: "Warm, hand-made stories with layered paper." },
       style: { zh: "剪纸拼贴风格（纸张质感、层叠、手作感，温暖）", en: "a cut-paper collage style (paper texture, layers, hand-made, warm)" },
+      youtube: "YOUTUBE_URL_1-cut-paper", bilibili: "BILIBILI_URL_1-cut-paper",
       meta: { zh: "Opus 5.5 · high · 首次 25.8 分钟 + 署名修改 1 次 · API 标价约 US$8.18 · 配乐 Artlist “Peace”", en: "Opus 5.5 · high · 25.8 min + 1 credit-line revision · about US$8.18 at API list price · music: “Peace” (Artlist)" } },
     { id: "2-ink-wash",
       name: { zh: "水墨", en: "Ink wash" },
       fit: { zh: "安静、有思考感的内容，墨色与留白。", en: "Quiet, reflective ideas; ink and empty space." },
       style: { zh: "中国水墨风格（笔触、墨色晕染、留白）", en: "a Chinese ink-wash style (brush strokes, spreading ink, empty space)" },
+      youtube: "YOUTUBE_URL_2-ink-wash", bilibili: "BILIBILI_URL_2-ink-wash",
       meta: { zh: "Opus 5.5 · high · 首次 26.8 分钟 + 署名修改 1 次 · API 标价约 US$7.53 · 配乐 Artlist “Peace”", en: "Opus 5.5 · high · 26.8 min + 1 credit-line revision · about US$7.53 at API list price · music: “Peace” (Artlist)" } },
     { id: "3-pixel-retro",
       name: { zh: "像素复古", en: "Pixel retro" },
       fit: { zh: "把一段经历讲成游戏关卡，轻松好玩。", en: "Playful journeys told as game levels." },
       style: { zh: "像素复古游戏风格（8-bit 像素画面，游戏化的关卡感）", en: "a retro pixel-game style (8-bit pixel art, a sense of game levels)" },
+      youtube: "YOUTUBE_URL_3-pixel-retro", bilibili: "BILIBILI_URL_3-pixel-retro",
       meta: { zh: "Opus 5.5 · high · 首次 18.5 分钟 + 署名修改 1 次 · API 标价约 US$6.79 · 配乐 Artlist “Space Disco”", en: "Opus 5.5 · high · 18.5 min + 1 credit-line revision · about US$6.79 at API list price · music: “Space Disco” (Artlist)" } },
     { id: "4-particles",
       name: { zh: "粒子光轨", en: "Particles" },
       fit: { zh: "科技与变化的主题，光点聚散成形。", en: "Tech and transformation; light gathering into form." },
       style: { zh: "粒子与生成艺术风格（粒子和光线轨迹聚散成形，流动、有科技感）", en: "a particle and generative-art style (particles and light trails gathering into shapes, flowing, technological)" },
+      youtube: "YOUTUBE_URL_4-particles", bilibili: "BILIBILI_URL_4-particles",
       meta: { zh: "Opus 5.5 · high · 首次 28.4 分钟 + 署名修改 1 次 · API 标价约 US$6.20 · 配乐 Artlist “Genesis”", en: "Opus 5.5 · high · 28.4 min + 1 credit-line revision · about US$6.20 at API list price · music: “Genesis” (Artlist)" } },
     { id: "5-cinematic-3d",
       name: { zh: "电影感 3D", en: "Cinematic 3D" },
       fit: { zh: "预告片式的发布：真实光影、景深、立体书。", en: "Trailer-style launches: real light, depth, a 3D book." },
       style: { zh: "电影预告片质感", en: "a cinematic trailer look" },
+      youtube: "YOUTUBE_URL_5-cinematic-3d", bilibili: "BILIBILI_URL_5-cinematic-3d",
       extra: { zh: "需要生成配乐时，可以加一句：“配乐用 Lyria 生成（这次付费调用我授权）”，约 0.04 美元，需要你自己的 OPENROUTER_API_KEY。", en: "For generated music you can add: “Generate the music with Lyria (I authorize this paid call)”, about US$0.04, using your own OPENROUTER_API_KEY." },
       meta: { zh: "Opus 5.5 · high · 28.1 分钟 · 无修改 · API 标价约 US$6.41 + Lyria US$0.04 · 3D 路线，GPU 渲染", en: "Opus 5.5 · high · 28.1 min · no revision · about US$6.41 at API list price + US$0.04 Lyria · 3D route, GPU render" } },
     { id: "6-lego-reference",
@@ -119,7 +127,8 @@
       fit: { zh: "积木搭出来的真实世界，适合轻松的产品故事。", en: "A world built from bricks, for light-hearted product stories." },
       note: { zh: "作者用内部产线制作的参照版，不是本 Skill 生成的；本 Skill 尚未用这个风格出过样片，下面的指令是实验性的。原片中这两句口播相隔较远，截取拼接处有一个跳切。", en: "Made by the author with a separate internal pipeline, not by this Skill. This Skill has no sample in this style yet, so the request below is experimental. The two narration lines are far apart in the original film; joining them left one jump cut." },
       style: { zh: "积木拼搭风格（塑料积木的材质与光泽，场景和物体由积木搭成）", en: "a toy-brick style (plastic bricks with their sheen; scenes and objects built from bricks)" },
-      meta: { zh: "制作条件不在本 Skill 记录范围内", en: "Production details are outside this Skill's records" } }
+      youtube: "YOUTUBE_URL_6-lego-reference", bilibili: "BILIBILI_URL_6-lego-reference",
+      meta: { zh: "制作条件不在本 Skill 记录范围内；这条已在作者其他产线发布，此处链接用其正式发布地址", en: "Production details are outside this Skill's records; this one is already published through the author's other pipeline, so the link here uses that official release" } }
   ];
 
   var grid = document.getElementById("grid");
@@ -155,8 +164,8 @@
     var media = el("div", { "class": "media" }, [video]);
     var missing = el("div", { "class": "missing" });
     missing.appendChild(both("span", {
-      zh: "视频文件还没放进 showcase/videos/。完整版将在 GitHub Releases 提供。",
-      en: "The video file is not in showcase/videos/ yet. Full versions will be on GitHub Releases."
+      zh: "本地还没有这个视频文件，这是仅供作者本地预览的功能。完整版见下方 YouTube / B 站链接。",
+      en: "This video file is not present locally (local preview only). Watch the full version via the YouTube / Bilibili links below."
     }));
     media.appendChild(missing);
     video.addEventListener("error", function () { media.classList.add("is-missing"); });
@@ -169,6 +178,21 @@
     body.appendChild(both("h2", s.name));
     body.appendChild(both("p", s.fit, "fit"));
     if (s.note) body.appendChild(both("p", s.note, "note"));
+
+    if (s.youtube || s.bilibili) {
+      var platforms = el("div", { "class": "platforms" });
+      if (s.youtube) {
+        var yt = el("a", { "class": "platform-link", href: s.youtube, target: "_blank", rel: "noopener" });
+        yt.appendChild(both("span", { zh: "在 YouTube 观看", en: "Watch on YouTube" }));
+        platforms.appendChild(yt);
+      }
+      if (s.bilibili) {
+        var bl = el("a", { "class": "platform-link", href: s.bilibili, target: "_blank", rel: "noopener" });
+        bl.appendChild(both("span", { zh: "在 B 站观看", en: "Watch on Bilibili" }));
+        platforms.appendChild(bl);
+      }
+      body.appendChild(platforms);
+    }
 
     var status = el("span", { "class": "status", role: "status", "aria-live": "polite" });
     var fallback = el("textarea", { "class": "fallback", readonly: "", hidden: "", "aria-label": "Request text" });

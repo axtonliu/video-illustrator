@@ -1,10 +1,15 @@
 # Full sample videos / 完整样片
 
-The full MP4 files are not stored in the repository. They will be attached to the
-GitHub Release of this project. To view them locally with `../index.html` or the README
-links, download them into this folder with these names:
+The full MP4 files are not stored in the repository and are not distributed as a
+downloadable file anywhere. The full versions (with narration and music) are published
+on YouTube and Bilibili; see the links in `../../README.md` / `../../README.zh-CN.md`
+or `../index.html`. This folder is only for the author's local preview: put the files
+here with these names to view them with `../index.html` or the README links.
 
-完整 MP4 不放进仓库，将作为 GitHub Release 附件提供。本地查看时，下载到本文件夹并使用以下文件名：
+完整 MP4 不放进仓库，也不以可下载文件的形式对外提供。完整版（带口播和配乐）发布在
+YouTube 和 B 站，链接见 `../../README.md` / `../../README.zh-CN.md` 或 `../index.html`。
+这个文件夹只用于作者本地预览：把文件放进来并使用以下文件名，即可通过 `../index.html`
+或 README 链接本地查看：
 
 | File | Style |
 |---|---|
