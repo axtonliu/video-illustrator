@@ -1,0 +1,89 @@
+# Video Illustrator · 配视频
+
+**你的声音，你的素材，任选一种画面。**
+
+[English](README.md)
+
+一个 Agent Skill：用你自己的旁白和你的真实素材（书封、课程封面、截图、logo，保持原样），按你选的风格做成 20–60 秒的宣传片或概念讲解片。交付 MP4 和可编辑的场景源码，在你自己的电脑上渲染。
+
+## 同一段口播，6 种画面
+
+每一格都是同一段 20.86 秒口播（作者本人的声音）和同一张真实书封。预览动图无声、循环播放；点开是带口播和配乐的完整版。
+
+<table>
+<tr>
+<td width="33%" valign="top"><a href="showcase/videos/1-cut-paper.mp4"><img src="showcase/previews/1-cut-paper.webp" alt="剪纸拼贴风格预览" width="100%"></a><br><b>剪纸拼贴</b><br>温暖、有手作感的故事，纸张层层叠叠。</td>
+<td width="33%" valign="top"><a href="showcase/videos/2-ink-wash.mp4"><img src="showcase/previews/2-ink-wash.webp" alt="水墨风格预览" width="100%"></a><br><b>水墨</b><br>安静、有思考感的内容，墨色与留白。</td>
+<td width="33%" valign="top"><a href="showcase/videos/3-pixel-retro.mp4"><img src="showcase/previews/3-pixel-retro.webp" alt="像素复古风格预览" width="100%"></a><br><b>像素复古</b><br>把一段经历讲成游戏关卡，轻松好玩。</td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="showcase/videos/4-particles.mp4"><img src="showcase/previews/4-particles.webp" alt="粒子光轨风格预览" width="100%"></a><br><b>粒子光轨</b><br>科技与变化的主题，光点聚散成形。</td>
+<td width="33%" valign="top"><a href="showcase/videos/5-cinematic-3d.mp4"><img src="showcase/previews/5-cinematic-3d.webp" alt="电影感 3D 预览" width="100%"></a><br><b>电影感 3D</b><br>预告片式的发布：真实光影、景深、立体书。</td>
+<td width="33%" valign="top"><a href="showcase/videos/6-lego-reference.mp4"><img src="showcase/previews/6-lego-reference.webp" alt="积木参照版预览" width="100%"></a><br><b>积木（参照版）</b><br><i>作者用内部产线制作的参照版，不是本 Skill 生成的。</i>放在这里作对照；原片中这两句口播相隔较远，截取拼接处有一个跳切。</td>
+</tr>
+</table>
+
+完整视频将放在本仓库的 GitHub Releases；在那之前，上面的链接指向 `showcase/videos/`。第 1–5 条都由一句话输入生成（Claude Code + Opus 5.5，effort high，作者本机环境），其中 4 条追加过一次修改，只改片尾作者署名。每条的原始指令、Skill 版本、耗时、API 标价口径成本和配乐来源见 [SAMPLES.md](showcase/SAMPLES.md)。另有一个轻量[风格页](showcase/index.html)，可以逐条播放样片，并一键复制对应风格的指令。
+
+## 怎么用
+
+1. **把素材放进文件夹**（都可选）：
+
+   ```text
+   my-promo/
+     inputs/voice/    你的旁白（录音或克隆音色导出）；可附 .srt 或 words.json 逐字时间
+     inputs/assets/   书封、课程封面、截图、logo：保持原样，只缩放、位移、裁切、整体光效
+     inputs/brand/    brand.json：display_name，可选 palette、fonts、logo
+   ```
+
+2. **一句话说要什么**，点名一种风格：
+
+   ```text
+   用 video-illustrator 处理 ./my-promo：我的旁白在 inputs/voice，书封在 inputs/assets，品牌信息在 inputs/brand。做一支剪纸拼贴风格的宣传短片，1920×1080，带中文字幕，画面节奏跟着旁白走。不要编造素材里没有的内容。
+   ```
+
+3. **拿到成片和源码**：MP4、可编辑的 `scene.html`、记录创作选择的 `brief.md`（配乐、节拍、每个时间点发生什么）以及用到的素材，之后可以修改和重新渲染。
+
+没有这些文件夹也照常工作，比如“用 20 秒白板动画讲清楚缓存为什么让重复请求更快”。单独出现的作者署名只用 [brand.json](references/brand.example.json) 里的 `display_name`，素材上原本印着的字不改。配色跟随所选风格，素材自带的颜色只作呼应。
+
+要电影感、预告片质感时走 3D 路线（three.js，在你的 GPU 上渲染：真实光照、景深、运动模糊，书封贴成立体书）；插画类风格仍走 2D。
+
+## 安装
+
+为 **Claude Code + Opus 5.5** 设计，其他宿主未验证。
+
+需要：
+
+- Node.js 20 或更新
+- PATH 中的 FFmpeg 和 ffprobe
+- Playwright Chromium（下面的命令会安装）
+- 可选，生成配乐：环境变量里放你自己的 `OPENROUTER_API_KEY`。配乐来自 OpenRouter 上的 Google Lyria 3，付费调用，约 0.04 美元/30 秒，只在你授权时调用。音效在本地程序合成，不收费。也可以让 Skill 从你已有的曲库里选。
+
+保持 `video-illustrator` 文件夹完整，放到 Skill 目录（Claude Code 项目级目录为 `.claude/skills/video-illustrator/`，或用 symlink 指向你的源码位置），然后在 Skill 文件夹运行：
+
+```sh
+npm ci
+npx playwright install chromium
+```
+
+`npm ci` 同时安装 3D 路线用到的 three.js（MIT，版本已锁定）。渲染全部在本地进行，不上传到任何渲染服务。coding agent 自身仍需模型访问权限。
+
+**GPU 渲染**（3D 路线）：在 macOS + Apple M4 Pro 上实测，`--gpu` 走 ANGLE Metal，起始场景 1080p 加胶片颗粒约 0.3 秒/帧。没有 GPU 时 Chromium 退回软件渲染，能用，但实测慢 2–15 倍（取决于运动模糊）。Windows、Linux 和其他 GPU 未测试。
+
+## 当前边界
+
+早期预览版，随缘维护。这是代码驱动的动画，不是写实视频模型，也不做自动事实核查；一句话不保证每次都直接成片。长叙事、字体和音频可能需要额外处理。发布前请看完成片并核对内容。欢迎可复现的问题和聚焦的 PR。
+
+## 更多
+
+- [风格目录](references/styles.md)：全部风格方向与选择方法，大多数还没有样片。
+- [SAMPLES.md](showcase/SAMPLES.md)：每条样片是怎么做出来的。
+- [VALIDATION.md](VALIDATION.md)：实际测过什么。
+- [致谢与第三方许可](references/credits.md)。
+- [渲染说明](references/rendering.md)：渲染接口、草稿、先音乐后画面的流程。
+
+## 许可与作者
+
+代码与文档：[MIT](LICENSE)，© 2026 Axton Liu。showcase 中的样片、预览动图和封面帧包含作者本人的声音、书封和授权配乐，仅用于展示本 Skill，不在 MIT 许可范围内（见 [SAMPLES.md](showcase/SAMPLES.md#material-and-rights--素材与授权)）。你自行加入的第三方素材遵守各自许可。
+
+作者：[Axton Liu](https://www.axtonliu.com/) · [X](https://x.com/AxtonLiu)

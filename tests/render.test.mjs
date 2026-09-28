@@ -1,0 +1,136 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { execFile, spawn } from 'node:child_process';
+import { promisify } from 'node:util';
+import { mkdtemp, readFile, readdir, rm, writeFile, symlink } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const exec = promisify(execFile);
+const renderer = fileURLToPath(new URL('../scripts/render.mjs', import.meta.url));
+const cli = args => exec(process.execPath, [renderer, ...args]);
+
+async function fixture(t) {
+  const directory = await mkdtemp(path.join(tmpdir(), 'video illustrator test '));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const html = path.join(directory, 'scene with spaces.html');
+  await writeFile(path.join(directory, 'dot.svg'), '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="10" fill="white"/></svg>');
+  await writeFile(html, `<body style="margin:0"><img src="dot.svg"><script>
+    window.renderFrame = async t => {
+      document.body.style.background = t < 0.5 ? 'rgb(255,0,0)' : 'rgb(0,0,255)';
+      document.querySelector('img').style.transform = 'translateX(' + t * 100 + 'px)';
+    };
+  </script>`);
+  return { directory, html };
+}
+
+test('real 1 second MP4 has expected frames, changing pixels, adjacent asset and padded audio', async t => {
+  const { directory, html } = await fixture(t);
+  const output = path.join(directory, 'video output.mp4');
+  const audio = path.join(directory, 'short tone.wav');
+  await exec('ffmpeg', ['-loglevel', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=0.2', audio]);
+  const result = await cli(['--input', html, '--output', output, '--duration', '1', '--width', '160', '--height', '90', '--fps', '10', '--audio', audio]);
+  assert.equal(JSON.parse(result.stdout).frames, 10);
+  assert.deepEqual(JSON.parse(result.stdout).warnings, []);
+  assert.doesNotMatch(result.stderr, /truncated/);
+  const probe = JSON.parse((await exec('ffprobe', ['-v', 'error', '-show_streams', '-of', 'json', output])).stdout);
+  const video = probe.streams.find(s => s.codec_type === 'video');
+  assert.equal(video.width, 160);
+  assert.equal(video.height, 90);
+  assert.equal(Number(video.nb_frames), 10);
+  assert.equal(Number(video.duration), 1);
+  assert.equal(probe.streams.find(s => s.codec_type === 'audio').codec_name, 'aac');
+  const hashes = (await exec('ffmpeg', ['-v', 'error', '-i', output, '-map', '0:v:0', '-f', 'framemd5', '-'])).stdout
+    .split('\n').filter(line => line && !line.startsWith('#')).map(line => line.split(',').at(-1).trim());
+  assert.notEqual(hashes[0], hashes.at(-1));
+  assert.ok(!(await readdir(directory)).some(name => name.startsWith('.video-illustrator-')));
+});
+
+test('existing output survives refusal and an explicitly allowed replacement that fails', async t => {
+  const { directory, html } = await fixture(t);
+  const output = path.join(directory, 'keep.mp4');
+  await writeFile(output, 'prior result');
+  const args = ['--input', html, '--output', output, '--duration', '1'];
+  await assert.rejects(cli(args), /Output already exists/);
+  await writeFile(html, '<body>Missing renderer</body>');
+  await assert.rejects(cli([...args, '--overwrite']), /window.renderFrame/);
+  assert.equal(await readFile(output, 'utf8'), 'prior result');
+  assert.ok(!(await readdir(directory)).some(name => name.startsWith('.video-illustrator-')));
+});
+
+test('still capture uses requested absolute time and creates a PNG', async t => {
+  const { directory, html } = await fixture(t);
+  const output = path.join(directory, 'still.png');
+  const result = await cli(['--input', html, '--output', output, '--still', '0.75', '--width', '160', '--height', '90']);
+  assert.equal(JSON.parse(result.stdout).time, 0.75);
+  assert.equal((await readFile(output)).subarray(1, 4).toString(), 'PNG');
+  const { stdout } = await exec('ffmpeg', ['-v', 'error', '-i', output, '-vf', 'crop=1:1:0:89,format=rgb24', '-f', 'rawvideo', '-'], { encoding: 'buffer' });
+  assert.deepEqual([...stdout], [0, 0, 255]);
+});
+
+
+test('absolute symlink CLI prints help while importing the module stays inert', async t => {
+  const { directory } = await fixture(t);
+  const alias = path.join(directory, 'runtime renderer.mjs');
+  await symlink(renderer, alias);
+  const help = await exec(process.execPath, [alias, '--help']);
+  assert.match(help.stdout, /Render local HTML/);
+  const imported = await exec(process.execPath, ['--input-type=module', '-e', `await import(${JSON.stringify(pathToFileURL(alias).href)}); console.log('imported');`]);
+  assert.equal(imported.stdout.trim(), 'imported');
+  assert.equal(imported.stderr, '');
+});
+
+test('absolute symlink CLI exports a real MP4 and warns before trimming long source audio', async t => {
+  const { directory, html } = await fixture(t);
+  const alias = path.join(directory, 'runtime renderer.mjs');
+  await symlink(renderer, alias);
+  const audio = path.join(directory, 'long tone.wav');
+  const output = path.join(directory, 'symlink result.mp4');
+  await exec('ffmpeg', ['-loglevel', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=2', audio]);
+  const result = await exec(process.execPath, [alias, '--input', html, '--output', output, '--duration', '1', '--audio', audio]);
+  const receipt = JSON.parse(result.stdout);
+  assert.equal(receipt.frames, 30);
+  assert.equal(receipt.warnings.length, 1);
+  assert.match(receipt.warnings[0], /2\.000s.*1\.000s.*truncated/);
+  assert.match(result.stderr, /Warning: Source audio/);
+  const probe = JSON.parse((await exec('ffprobe', ['-v', 'error', '-show_streams', '-of', 'json', output])).stdout);
+  const video = probe.streams.find(stream => stream.codec_type === 'video');
+  assert.equal(Number(video.nb_frames), 30);
+  assert.equal(Number(video.duration), 1);
+  assert.equal(video.width, 1280);
+  assert.equal(video.height, 720);
+  assert.equal(video.r_frame_rate, '30/1');
+  assert.ok(probe.streams.some(stream => stream.codec_type === 'audio'));
+});
+
+test('SIGINT and SIGTERM mid-render remove the staging folder and exit with the signal code', async t => {
+  for (const [signal, code] of [['SIGINT', 130], ['SIGTERM', 143]]) {
+    const { directory, html } = await fixture(t);
+    await writeFile(html, `<body style="margin:0"><script>
+      window.renderFrame = async t => {
+        await new Promise(resolve => setTimeout(resolve, 150));
+        document.body.style.background = 'rgb(' + Math.round(t * 20) % 255 + ',0,0)';
+      };
+    </script>`);
+    const child = spawn(process.execPath, [renderer, '--input', html, '--output', path.join(directory, 'long.mp4'),
+      '--duration', '60', '--width', '160', '--height', '90', '--fps', '10'], { stdio: ['ignore', 'ignore', 'pipe'] });
+    let stderr = '';
+    child.stderr.on('data', data => { stderr += data; });
+    const closed = new Promise(resolve => child.on('close', (exitCode, exitSignal) => resolve({ exitCode, exitSignal })));
+    const staging = async () => (await readdir(directory)).filter(name => name.startsWith('.video-illustrator-'));
+    let found = [];
+    for (let i = 0; i < 200 && !found.length; i++) {
+      found = await staging();
+      if (found.length && (await readdir(path.join(directory, found[0]))).length < 2) found = [];
+      if (!found.length) await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    assert.equal(found.length, 1, `staging folder with frames should appear before ${signal}`);
+    child.kill(signal);
+    const { exitCode } = await closed;
+    assert.equal(exitCode, code);
+    assert.match(stderr, new RegExp(`interrupted by ${signal}`));
+    assert.deepEqual(await staging(), []);
+    assert.ok(!(await readdir(directory)).includes('long.mp4'));
+  }
+});

@@ -1,0 +1,71 @@
+# Research references and credits
+
+This pack contains newly written directing guidance and prompts. It uses common
+animation practices such as visual hierarchy, cause-and-effect staging, object
+continuity, consistent projection, and material-based motion. The style names refer
+to broad visual traditions, not to a claim of inventing those traditions.
+
+Public projects that informed the product exploration:
+
+- [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar), by Lemomo: an example of
+  presenting code-made films alongside style, directing, and technical guidance.
+  Its own documentation and assets remain governed by its published licenses.
+- [onetake](https://github.com/feitangyuan/onetake), by feitangyuan: a reference for
+  discussing visual continuity between beats. This pack does not require an
+  unbroken shot or include that project's code, tests, prompts, or assets.
+- [baoyu-skills](https://github.com/JimLiu/baoyu-skills), by Jim Liu / Baoyu: an
+  example of packaging creative workflows as discoverable, reusable agent Skills.
+
+### Ideas adapted in 0.2.0
+
+`cinematic.md` and the audio-first workflow in `rendering.md` adapt ideas, rewritten
+in our own words, from:
+
+- The Lemo-Opuscar directing and technique guides (`DIRECTOR.md`, `TECHNIQUE.md`),
+  © Lemomo, licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/):
+  every visible action has a sound, the music grid comes before animation, one
+  shared timeline drives picture and sound, reading-time holds scaled by line length,
+  ducking music under voice and a −14 LUFS delivery target. Changes: condensed,
+  reworded and adapted to this Skill's single-file `renderFrame(t)` renderer and
+  Node audio scripts.
+- The treatment and engine notes of the “I'm Upping My P(doom)” music-video project,
+  [mexicat/pdoom-video](https://github.com/mexicat/pdoom-video) by mexicat (its code is released under the MIT License): big changes landing on downbeats, strong eases with holds then snaps,
+  and one recurring motif that escalates across the film. No code was copied.
+- The hand-drawn-canvas-animation skill in
+  [alesha-pro/tools](https://github.com/alesha-pro/tools/tree/98450c6386dac2502ac77d8548e2b9cbe76603cb/skills/hand-drawn-canvas-animation)
+  (MIT License): whole-pose drawings, exposure tracks, held drawings keeping their marks,
+  and tweening only stroke-compatible drawings, reflected in the “Hand-made motion” section
+  of `directing.md`. Rewritten in our own words; no code was copied.
+
+### Added in 0.3.0
+
+- [three.js](https://github.com/mrdoob/three.js) (MIT License, © 2010–2026 three.js
+  authors) is a runtime dependency of the 3D route, pinned to `0.186.1` in
+  `package.json` and installed by `npm ci`; it is not copied into this package. The
+  starter scene uses its `EffectComposer`, `RenderPass`, `BokehPass`, `UnrealBloomPass`,
+  `TexturePass`, `OutputPass`, `ShaderPass` and `RoomEnvironment` examples as imports.
+- The sub-frame motion blur in `three-template.html` (averaging renders spread over the
+  shutter in a linear HDR buffer before bloom and grain, choosing more sub-frames only
+  for frames with visible motion, and changing grain per frame rather than per
+  sub-frame) follows the approach described in the engine notes of
+  [mexicat/pdoom-video](https://github.com/mexicat/pdoom-video) (MIT License). The
+  implementation here is our own, simpler version: a fixed or motion-scaled count with
+  a pixel-per-sub-frame rule instead of that project's convergence test. No code was copied.
+
+`scripts/beats.mjs`, `scripts/sfx.mjs` and `scripts/music.mjs` are independently written
+for this package. Spectral-flux onset detection, autocorrelation tempo estimation and
+dynamic-programming beat tracking are standard published techniques (for example
+D. P. W. Ellis, "Beat Tracking by Dynamic Programming", 2007).
+
+These links acknowledge research context. Apart from three.js above, they are not
+runtime dependencies, and none imply endorsement. No prose, source code, videos, audio, images, or style files
+from those projects are bundled in this reference pack. Any future imported asset
+or adapted implementation needs its own attribution and license review.
+
+### Showcase media
+
+The showcase films contain music from Artlist (“Peace” by Musical Mandalas, “Space Disco”
+by Stefano Mastronardi, “Genesis” by Quinten Coblentz), used under the author's Artlist
+license, and one track generated with Google Lyria 3. No audio file is distributed with
+this package. The films, previews and posters are not covered by the MIT license; see
+[showcase/SAMPLES.md](../showcase/SAMPLES.md).

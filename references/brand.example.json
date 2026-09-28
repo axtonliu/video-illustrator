@@ -1,0 +1,15 @@
+{
+  "$comment": "Copy to inputs/brand/brand.json and edit. Every field except display_name is optional. Paths are relative to inputs/brand/.",
+  "display_name": "Your Name",
+  "palette": {
+    "primary": "#1F3A5F",
+    "accent": "#C9A227",
+    "ground": "#F6F3EC",
+    "ink": "#1A1A1A"
+  },
+  "fonts": {
+    "display": { "family": "Your Display Font", "file": "fonts/display.woff2" },
+    "body": { "family": "Your Body Font", "file": "fonts/body.woff2" }
+  },
+  "logo": "logo.svg"
+}

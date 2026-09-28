@@ -1,0 +1,16 @@
+{
+  "name": "video-illustrator",
+  "version": "0.3.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/render.test.mjs tests/audio.test.mjs tests/three.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "playwright": "1.63.0",
+    "three": "0.186.1"
+  }
+}

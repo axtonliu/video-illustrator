@@ -1,0 +1,4 @@
+node_modules/
+outputs/
+.DS_Store
+showcase/videos/*.mp4

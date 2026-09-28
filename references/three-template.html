@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>video-illustrator three.js starter</title>
+<!--
+  3D starter scene for scripts/render.mjs. Copy it next to your scene as scene.html,
+  copy the real cover into assets/, then edit ASSETS, TL and the pose functions.
+  It must be rendered through render.mjs (local server): the importmap below points at
+  /__vi/three/, which the renderer maps to this skill's pinned three.js.
+  Query options (render.mjs --query): subframes=N (max per frame), shutter=0..1
+  (fraction of the frame interval), adaptive=0 (always use N), grain=0 (fast previews).
+-->
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#000}canvas{display:block}</style>
+<script type="importmap">
+{ "imports": { "three": "/__vi/three/build/three.module.js", "three/addons/": "/__vi/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+import { TexturePass } from 'three/addons/postprocessing/TexturePass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// 1. Configuration -----------------------------------------------------------------
+// Real assets are used as they are: the cover image is the front face, never redrawn.
+const ASSETS = {
+  cover: 'assets/cover.png', // front cover copied from inputs/assets/
+  spine: null,               // optional spine image; null = neutral material
+  back: null                 // optional back-cover image; null = neutral material
+};
+const BOOK = { height: 2.35, thickness: 0.24 }; // width follows the cover's pixel aspect
+const NEUTRAL = 0x2a2a2d;                        // spine/back fallback, not a cover color
+
+const query = new URLSearchParams(location.search);
+const num = (key, fallback) => query.has(key) ? Number(query.get(key)) : fallback;
+const VI = window.videoIllustrator || { fps: 30, width: innerWidth, height: innerHeight };
+const W = VI.width, H = VI.height;
+const BLUR = {
+  subframes: Math.max(1, Math.round(num('subframes', 8))), // maximum sub-frames per frame
+  shutter: num('shutter', 0.5),                            // 0.5 = 180-degree shutter
+  adaptive: query.get('adaptive') !== '0',                 // fewer sub-frames when still
+  pixelsPerSubframe: 1.5
+};
+const POST = {
+  exposure: 1.0, bloomStrength: 0.55, bloomRadius: 0.35, bloomThreshold: 0.9,
+  grain: num('grain', 0.035), vignette: 0.45, // grain=0 for previews: noisy frames make PNG capture ~4x slower
+  aperture: 0.004, maxBlur: 0.014,
+};
+
+// 2. Timeline: every time in the film lives here ------------------------------------
+const TL = {
+  push:   [0.0, 2.4],  // dolly through the foreground toward the book
+  rack:   [0.6, 1.7],  // focus moves from a background block to the book
+  sweep:  [1.2, 3.4],  // key light travels across the cover
+  whip:   [3.6, 4.0],  // fast orbit: this is where motion blur shows
+  settle: [4.0, 5.2]   // ease into the final hero angle, then hold
+};
+
+// Deterministic helpers: everything below is a pure function of t.
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, x) => a + (b - a) * x;
+const ease = {
+  inOut: x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2,
+  out: x => 1 - Math.pow(1 - x, 3),
+  outBack: x => 1 + 2.2 * Math.pow(x - 1, 3) + 1.2 * Math.pow(x - 1, 2)
+};
+const prog = (t, [a, b], e = ease.inOut) => e(clamp((t - a) / (b - a)));
+function mulberry32(seed) {
+  return () => {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let r = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    r = r + Math.imul(r ^ r >>> 7, 61 | r) ^ r;
+    return ((r ^ r >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// renderFrame exists as soon as the module runs; it waits for assets internally.
+let ready;
+window.renderFrame = async t => { await ready; draw(t); };
+
+// 3. Renderer, scene and objects ----------------------------------------------------
+const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(1);
+renderer.setSize(W, H);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = POST.exposure;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.autoUpdate = false; // updated once per sub-frame, not again by the depth pass
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050506);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.1; // ambient fill: low, so the key light carries the mood
+
+const camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 60);
+const book = new THREE.Group();
+scene.add(book);
+
+// Key light (warm, casts shadows), rim light (cool, from behind), practical glow in back.
+const key = new THREE.SpotLight(0xffe0bd, 55, 0, 0.42, 0.65, 2);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.bias = -0.0004;
+key.shadow.camera.near = 1;
+key.shadow.camera.far = 20;
+scene.add(key, key.target);
+const rim = new THREE.DirectionalLight(0x9cc2ff, 1.6);
+scene.add(rim, rim.target);
+
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ color: 0x1b1b1f, roughness: 0.55 }));
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+const wall = new THREE.Mesh(new THREE.PlaneGeometry(40, 12), new THREE.MeshStandardMaterial({ color: 0x141418, roughness: 0.9 }));
+wall.position.set(0, 6, -7);
+wall.receiveShadow = true;
+const slit = new THREE.Mesh(new THREE.BoxGeometry(5, 0.06, 0.06), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.72, 0.42).multiplyScalar(4) }));
+slit.position.set(1.5, 3.2, -6.9); // an HDR practical: the only thing besides speculars that blooms
+scene.add(floor, wall, slit);
+
+// Neutral blocks give depth: two in the foreground that slide past during the push, three behind.
+const blockMat = new THREE.MeshStandardMaterial({ color: 0x3a3a40, roughness: 0.7 });
+const blocks = [[-4.6, 1.6, 6.0, 0.5, 3.2, 0.5], [-1.9, 0.35, 6.1, 0.7, 0.7, 0.7],
+  [-3.2, 0.9, -4.5, 1.2, 1.8, 1.2], [3.6, 1.4, -5.2, 1.0, 2.8, 1.0], [2.3, 0.4, -3.2, 0.8, 0.8, 0.8]]
+  .map(([x, y, z, w, h, d]) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), blockMat);
+    mesh.position.set(x, y, z);
+    mesh.castShadow = mesh.receiveShadow = true;
+    scene.add(mesh);
+    return mesh;
+  });
+const focusBlock = blocks[3]; // focus starts on the background, then racks to the book
+
+// Page edges: generated fine lines (generic paper, not part of the cover artwork).
+function pagesTexture(vertical, seed) {
+  const random = mulberry32(seed);
+  const canvas = document.createElement('canvas');
+  canvas.width = vertical ? 256 : 16;
+  canvas.height = vertical ? 16 : 256;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#e9e3d7';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < 256; i++) {
+    ctx.fillStyle = `rgba(90,80,65,${0.08 + random() * 0.22})`;
+    if (vertical) ctx.fillRect(i, 0, 1, 16); else ctx.fillRect(0, i, 16, 1);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+async function loadImage(url) {
+  if (!url) return null;
+  const texture = await new THREE.TextureLoader().loadAsync(url);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return texture;
+}
+
+async function buildBook() {
+  const [cover, spine, back] = await Promise.all([loadImage(ASSETS.cover), loadImage(ASSETS.spine), loadImage(ASSETS.back)]);
+  if (!cover) throw Error('ASSETS.cover is required');
+  const width = BOOK.height * cover.image.width / cover.image.height; // keep the cover's proportions
+  const printed = map => new THREE.MeshPhysicalMaterial({ map, roughness: 0.42, clearcoat: 0.4, clearcoatRoughness: 0.3 });
+  const neutral = () => new THREE.MeshPhysicalMaterial({ color: NEUTRAL, roughness: 0.5, clearcoat: 0.3 });
+  // BoxGeometry faces: +x fore-edge, -x spine, +y top, -y bottom, +z front, -z back.
+  const materials = [
+    new THREE.MeshStandardMaterial({ map: pagesTexture(true, 7), roughness: 0.85 }),
+    spine ? printed(spine) : neutral(),
+    new THREE.MeshStandardMaterial({ map: pagesTexture(false, 11), roughness: 0.85 }),
+    new THREE.MeshStandardMaterial({ map: pagesTexture(false, 13), roughness: 0.85 }),
+    printed(cover),
+    back ? printed(back) : neutral()
+  ];
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, BOOK.height, BOOK.thickness), materials);
+  mesh.position.y = BOOK.height / 2;
+  mesh.castShadow = mesh.receiveShadow = true;
+  book.add(mesh);
+  book.userData.corners = [-1, 1].flatMap(x => [-1, 1].flatMap(y => [-1, 1].map(z =>
+    new THREE.Vector3(x * width / 2, BOOK.height / 2 + y * BOOK.height / 2, z * BOOK.thickness / 2))));
+}
+
+// 4. Pose: camera, book, lights and focus as functions of t -------------------------
+const bookCenter = new THREE.Vector3(0, BOOK.height / 2, 0);
+const focusPoint = new THREE.Vector3();
+function pose(t) {
+  const push = prog(t, TL.push, ease.out);
+  const whip = prog(t, TL.whip, ease.inOut);
+  const settle = prog(t, TL.settle, ease.out);
+  const angle = lerp(-0.6, -0.32, push) + 0.95 * whip - 0.25 * settle;
+  const distance = lerp(12.0, 7.4, push) - 0.8 * settle;
+  const height = lerp(2.0, 1.45, push);
+  camera.position.set(Math.sin(angle) * distance, height, Math.cos(angle) * distance);
+  camera.lookAt(bookCenter.x, bookCenter.y - 0.05, bookCenter.z);
+  camera.updateMatrixWorld();
+
+  book.rotation.y = lerp(-0.42, -0.12, clamp(t / 5)) + 0.35 * whip - 0.2 * settle;
+  book.position.y = 0.12 * ease.outBack(prog(t, TL.whip, x => x)) * (1 - settle);
+  book.updateMatrixWorld();
+
+  const sweep = prog(t, TL.sweep, ease.inOut);
+  key.position.set(lerp(-5, 5, sweep), 5.2, 4.2);
+  key.target.position.copy(bookCenter);
+  rim.position.set(-2.5, 4.5, -6);
+  rim.target.position.copy(bookCenter);
+
+  focusPoint.lerpVectors(focusBlock.position, bookCenter, prog(t, TL.rack, ease.inOut));
+  return focusPoint.clone().applyMatrix4(camera.matrixWorldInverse).z * -1; // focus distance along the view
+}
+
+// Screen-space movement over the shutter decides how many sub-frames a frame needs.
+const probePoints = () => [...book.userData.corners.map(c => c.clone().applyMatrix4(book.matrixWorld)), ...blocks.map(b => b.position.clone())];
+function screenMotion(t0, t1) {
+  pose(t0);
+  const a = probePoints().map(p => p.project(camera));
+  pose(t1);
+  const b = probePoints().map(p => p.project(camera));
+  let max = 0;
+  a.forEach((p, i) => {
+    if (Math.abs(p.z) > 1 || Math.abs(b[i].z) > 1) return;
+    max = Math.max(max, Math.hypot((b[i].x - p.x) * W / 2, (b[i].y - p.y) * H / 2));
+  });
+  return max;
+}
+
+// 5. Lens pass per sub-frame, accumulation, then post once per frame ----------------
+const hdr = samples => new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples });
+const lens = new EffectComposer(renderer, hdr(4));
+lens.renderToScreen = false;
+lens.addPass(new RenderPass(scene, camera));
+const bokeh = new BokehPass(scene, camera, { focus: 5, aperture: POST.aperture, maxblur: POST.maxBlur });
+lens.addPass(bokeh);
+
+const accumTarget = hdr(0);
+const accumulate = new FullScreenQuad(new THREE.ShaderMaterial({
+  uniforms: { tSource: { value: null }, weight: { value: 1 } },
+  vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: 'uniform sampler2D tSource; uniform float weight; varying vec2 vUv; void main() { gl_FragColor = texture2D(tSource, vUv) * weight; }',
+  blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendEquation: THREE.AddEquation,
+  depthTest: false, depthWrite: false
+}));
+
+const post = new EffectComposer(renderer, hdr(0));
+post.addPass(new TexturePass(accumTarget.texture));
+post.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), POST.bloomStrength, POST.bloomRadius, POST.bloomThreshold));
+post.addPass(new OutputPass()); // ACES tone mapping + sRGB
+const finish = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, seed: { value: 0 }, grain: { value: POST.grain }, vignette: { value: POST.vignette }, aspect: { value: W / H } },
+  vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float seed, grain, vignette, aspect; varying vec2 vUv;
+    float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233)) + seed) * 43758.5453); }
+    void main() {
+      vec4 c = texture2D(tDiffuse, vUv);
+      vec2 d = (vUv - 0.5) * vec2(aspect, 1.0);
+      c.rgb *= 1.0 - vignette * smoothstep(0.35, 1.0, length(d));
+      float luma = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+      c.rgb += (hash(vUv * 1024.0) - 0.5) * grain * (1.0 - 0.6 * luma); // lighter grain on bright areas
+      gl_FragColor = c;
+    }`
+});
+post.addPass(finish);
+
+function draw(t) {
+  const shutterSeconds = BLUR.shutter / VI.fps;
+  const moved = screenMotion(t - shutterSeconds / 2, t + shutterSeconds / 2);
+  const count = BLUR.adaptive ? clamp(Math.ceil(moved / BLUR.pixelsPerSubframe), 1, BLUR.subframes) : BLUR.subframes;
+  renderer.setRenderTarget(accumTarget);
+  renderer.setClearColor(0x000000, 0);
+  renderer.clear();
+  renderer.autoClear = false; // otherwise every accumulate draw wipes the sub-frames before it
+  for (let i = 0; i < count; i++) {
+    const ts = count === 1 ? t : t + ((i + 0.5) / count - 0.5) * shutterSeconds;
+    bokeh.uniforms.focus.value = pose(ts);
+    renderer.shadowMap.needsUpdate = true;
+    lens.render();
+    accumulate.material.uniforms.tSource.value = lens.readBuffer.texture;
+    accumulate.material.uniforms.weight.value = 1 / count;
+    renderer.setRenderTarget(accumTarget);
+    accumulate.render(renderer);
+  }
+  renderer.autoClear = true;
+  finish.uniforms.seed.value = Math.round(t * VI.fps) % 997; // grain changes per frame, not per sub-frame
+  post.render();
+  window.lastFrame = { t, subframes: count, motionPixels: +moved.toFixed(2) };
+}
+
+ready = buildBook();
+</script>
+</body>
+</html>

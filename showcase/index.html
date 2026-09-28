@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video Illustrator 风格页</title>
+<meta name="description" content="同一段口播，六种画面：video-illustrator 样片与风格指令。">
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --surface: #ffffff;
+    --text: #1f1d1a;
+    --muted: #6b665d;
+    --line: #e4dfd4;
+    --accent: #1f4e79;
+    --accent-text: #ffffff;
+    --note-bg: #fbf3e0;
+    --note-line: #e8d3a2;
+    --radius: 12px;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
+  }
+  main { max-width: 1180px; margin: 0 auto; padding: 32px 16px 56px; }
+  header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  h1 { font-size: clamp(26px, 4vw, 36px); line-height: 1.2; margin: 0 0 6px; }
+  .lead { color: var(--muted); margin: 0 0 20px; max-width: 760px; }
+  .lang { display: flex; gap: 4px; }
+  .lang button { border: 1px solid var(--line); background: var(--surface); color: var(--text); padding: 4px 10px; border-radius: 999px; font: inherit; font-size: 14px; cursor: pointer; }
+  .lang button[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  @media (max-width: 380px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+  .media { position: relative; aspect-ratio: 16 / 9; background: #111; }
+  .media video { width: 100%; height: 100%; display: block; object-fit: cover; background: #111; }
+  .media .missing { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; text-align: center; padding: 16px; background: rgba(20, 18, 15, 0.82); color: #fff; font-size: 14px; }
+  .media.is-missing .missing { display: flex; }
+  .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  h2 { font-size: 19px; margin: 0; }
+  .fit { margin: 0; color: var(--muted); }
+  .note { margin: 0; padding: 8px 10px; background: var(--note-bg); border: 1px solid var(--note-line); border-radius: 8px; font-size: 14px; }
+  .actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 4px; }
+  .copy { border: 0; background: var(--accent); color: var(--accent-text); padding: 8px 14px; border-radius: 8px; font: inherit; font-size: 15px; cursor: pointer; }
+  .copy:focus-visible, .lang button:focus-visible, summary:focus-visible { outline: 3px solid #f0b429; outline-offset: 2px; }
+  .status { font-size: 14px; color: var(--muted); }
+  textarea.fallback { width: 100%; min-height: 120px; font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; border: 1px solid var(--line); border-radius: 8px; padding: 8px; resize: vertical; color: var(--text); background: #fffdf8; }
+  details { font-size: 14px; color: var(--muted); }
+  summary { cursor: pointer; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 14px; }
+  footer a, .lead a { color: var(--accent); }
+  [data-lang="en"] .zh, [data-lang="zh"] .en { display: none; }
+</style>
+</head>
+<body data-lang="zh">
+<main>
+  <header>
+    <div>
+      <h1><span class="zh">你的声音，你的素材，任选一种画面</span><span class="en">Your voice, your assets, any look you choose</span></h1>
+    </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-set-lang="zh" aria-pressed="true">中文</button>
+      <button type="button" data-set-lang="en" aria-pressed="false">English</button>
+    </div>
+  </header>
+  <p class="lead">
+    <span class="zh">同一段 20.86 秒口播（作者本人的声音）和同一张真实书封，做成六种画面。点击播放完整版（带口播与配乐），选中喜欢的风格后复制指令，把 <code>./my-promo</code> 换成你自己的素材文件夹。制作条件见 <a href="SAMPLES.md">SAMPLES.md</a>。</span>
+    <span class="en">The same 20.86-second narration (the author's own voice) and the same real book cover, in six looks. Click to play the full version with narration and music, then copy the request for the style you like and point <code>./my-promo</code> at your own folder. How each was made: <a href="SAMPLES.md">SAMPLES.md</a>.</span>
+  </p>
+
+  <section class="grid" id="grid" aria-label="Samples"></section>
+
+  <footer>
+    <p class="zh">完整视频将放在 GitHub Releases。本地查看时，把六个 MP4 放进 <code>showcase/videos/</code>（文件名见 <code>videos/README.md</code>）。样片、预览与封面帧包含作者本人的声音、书封和授权配乐，仅作展示，不在 MIT 许可范围内。</p>
+    <p class="en">The full videos will be attached to GitHub Releases. To view locally, put the six MP4 files in <code>showcase/videos/</code> (names in <code>videos/README.md</code>). The films, previews and posters contain the author's voice, book cover and licensed music; they are for demonstration only and not covered by the MIT license.</p>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var tail = {
+    zh: "用 video-illustrator 处理 ./my-promo：我的旁白在 inputs/voice，素材（书封、课程封面、截图或 logo）在 inputs/assets，品牌信息在 inputs/brand。做一支{style}的宣传短片，1920×1080，带中文字幕，画面节奏跟着旁白走。素材保持原样，不要编造素材里没有的内容。",
+    en: "Use video-illustrator on ./my-promo: my narration is in inputs/voice, my assets (book or course cover, screenshots, logo) in inputs/assets, brand info in inputs/brand. Make a 1920×1080 promo in {style} with subtitles, timed to the narration. Keep the assets as they are and don't invent anything the material doesn't say."
+  };
+
+  var samples = [
+    { id: "1-cut-paper",
+      name: { zh: "剪纸拼贴", en: "Cut paper" },
+      fit: { zh: "温暖、有手作感的故事，纸张层层叠叠。", en: "Warm, hand-made stories with layered paper." },
+      style: { zh: "剪纸拼贴风格（纸张质感、层叠、手作感，温暖）", en: "a cut-paper collage style (paper texture, layers, hand-made, warm)" },
+      meta: { zh: "Opus 5.5 · high · 首次 25.8 分钟 + 署名修改 1 次 · API 标价约 US$8.18 · 配乐 Artlist “Peace”", en: "Opus 5.5 · high · 25.8 min + 1 credit-line revision · about US$8.18 at API list price · music: “Peace” (Artlist)" } },
+    { id: "2-ink-wash",
+      name: { zh: "水墨", en: "Ink wash" },
+      fit: { zh: "安静、有思考感的内容，墨色与留白。", en: "Quiet, reflective ideas; ink and empty space." },
+      style: { zh: "中国水墨风格（笔触、墨色晕染、留白）", en: "a Chinese ink-wash style (brush strokes, spreading ink, empty space)" },
+      meta: { zh: "Opus 5.5 · high · 首次 26.8 分钟 + 署名修改 1 次 · API 标价约 US$7.53 · 配乐 Artlist “Peace”", en: "Opus 5.5 · high · 26.8 min + 1 credit-line revision · about US$7.53 at API list price · music: “Peace” (Artlist)" } },
+    { id: "3-pixel-retro",
+      name: { zh: "像素复古", en: "Pixel retro" },
+      fit: { zh: "把一段经历讲成游戏关卡，轻松好玩。", en: "Playful journeys told as game levels." },
+      style: { zh: "像素复古游戏风格（8-bit 像素画面，游戏化的关卡感）", en: "a retro pixel-game style (8-bit pixel art, a sense of game levels)" },
+      meta: { zh: "Opus 5.5 · high · 首次 18.5 分钟 + 署名修改 1 次 · API 标价约 US$6.79 · 配乐 Artlist “Space Disco”", en: "Opus 5.5 · high · 18.5 min + 1 credit-line revision · about US$6.79 at API list price · music: “Space Disco” (Artlist)" } },
+    { id: "4-particles",
+      name: { zh: "粒子光轨", en: "Particles" },
+      fit: { zh: "科技与变化的主题，光点聚散成形。", en: "Tech and transformation; light gathering into form." },
+      style: { zh: "粒子与生成艺术风格（粒子和光线轨迹聚散成形，流动、有科技感）", en: "a particle and generative-art style (particles and light trails gathering into shapes, flowing, technological)" },
+      meta: { zh: "Opus 5.5 · high · 首次 28.4 分钟 + 署名修改 1 次 · API 标价约 US$6.20 · 配乐 Artlist “Genesis”", en: "Opus 5.5 · high · 28.4 min + 1 credit-line revision · about US$6.20 at API list price · music: “Genesis” (Artlist)" } },
+    { id: "5-cinematic-3d",
+      name: { zh: "电影感 3D", en: "Cinematic 3D" },
+      fit: { zh: "预告片式的发布：真实光影、景深、立体书。", en: "Trailer-style launches: real light, depth, a 3D book." },
+      style: { zh: "电影预告片质感", en: "a cinematic trailer look" },
+      extra: { zh: "需要生成配乐时，可以加一句：“配乐用 Lyria 生成（这次付费调用我授权）”，约 0.04 美元，需要你自己的 OPENROUTER_API_KEY。", en: "For generated music you can add: “Generate the music with Lyria (I authorize this paid call)”, about US$0.04, using your own OPENROUTER_API_KEY." },
+      meta: { zh: "Opus 5.5 · high · 28.1 分钟 · 无修改 · API 标价约 US$6.41 + Lyria US$0.04 · 3D 路线，GPU 渲染", en: "Opus 5.5 · high · 28.1 min · no revision · about US$6.41 at API list price + US$0.04 Lyria · 3D route, GPU render" } },
+    { id: "6-lego-reference",
+      name: { zh: "积木（参照版）", en: "Brick world (reference)" },
+      fit: { zh: "积木搭出来的真实世界，适合轻松的产品故事。", en: "A world built from bricks, for light-hearted product stories." },
+      note: { zh: "作者用内部产线制作的参照版，不是本 Skill 生成的；本 Skill 尚未用这个风格出过样片，下面的指令是实验性的。原片中这两句口播相隔较远，截取拼接处有一个跳切。", en: "Made by the author with a separate internal pipeline, not by this Skill. This Skill has no sample in this style yet, so the request below is experimental. The two narration lines are far apart in the original film; joining them left one jump cut." },
+      style: { zh: "积木拼搭风格（塑料积木的材质与光泽，场景和物体由积木搭成）", en: "a toy-brick style (plastic bricks with their sheen; scenes and objects built from bricks)" },
+      meta: { zh: "制作条件不在本 Skill 记录范围内", en: "Production details are outside this Skill's records" } }
+  ];
+
+  var grid = document.getElementById("grid");
+  var videos = [];
+
+  function el(tag, attrs, children) {
+    var n = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === "text") n.textContent = attrs[k]; else n.setAttribute(k, attrs[k]);
+    }
+    (children || []).forEach(function (c) { if (c) n.appendChild(c); });
+    return n;
+  }
+  function both(tag, pair, cls) {
+    var wrap = document.createDocumentFragment();
+    wrap.appendChild(el(tag, { "class": (cls ? cls + " " : "") + "zh", text: pair.zh }));
+    wrap.appendChild(el(tag, { "class": (cls ? cls + " " : "") + "en", text: pair.en }));
+    return wrap;
+  }
+  function promptFor(s, lang) {
+    return tail[lang].replace("{style}", s.style[lang]);
+  }
+
+  samples.forEach(function (s) {
+    var video = el("video", {
+      src: "videos/" + s.id + ".mp4",
+      poster: "previews/" + s.id + ".jpg",
+      controls: "",
+      preload: "none",
+      playsinline: "",
+      "aria-label": s.name.zh + " / " + s.name.en
+    });
+    var media = el("div", { "class": "media" }, [video]);
+    var missing = el("div", { "class": "missing" });
+    missing.appendChild(both("span", {
+      zh: "视频文件还没放进 showcase/videos/。完整版将在 GitHub Releases 提供。",
+      en: "The video file is not in showcase/videos/ yet. Full versions will be on GitHub Releases."
+    }));
+    media.appendChild(missing);
+    video.addEventListener("error", function () { media.classList.add("is-missing"); });
+    video.addEventListener("play", function () {
+      videos.forEach(function (v) { if (v !== video && !v.paused) v.pause(); });
+    });
+    videos.push(video);
+
+    var body = el("div", { "class": "body" });
+    body.appendChild(both("h2", s.name));
+    body.appendChild(both("p", s.fit, "fit"));
+    if (s.note) body.appendChild(both("p", s.note, "note"));
+
+    var status = el("span", { "class": "status", role: "status", "aria-live": "polite" });
+    var fallback = el("textarea", { "class": "fallback", readonly: "", hidden: "", "aria-label": "Request text" });
+    var btn = el("button", { type: "button", "class": "copy" });
+    btn.appendChild(both("span", { zh: s.note ? "复制实验指令" : "复制这个风格的指令", en: s.note ? "Copy experimental request" : "Copy request for this style" }));
+    btn.addEventListener("click", function () {
+      var lang = document.body.getAttribute("data-lang");
+      var text = promptFor(s, lang);
+      var showFallback = function () {
+        fallback.value = text;
+        fallback.hidden = false;
+        fallback.focus();
+        fallback.select();
+        status.textContent = lang === "zh" ? "无法自动复制，请手动选中下方文字复制。" : "Could not copy automatically. Select the text below and copy it.";
+      };
+      if (navigator.clipboard && window.isSecureContext !== false) {
+        navigator.clipboard.writeText(text).then(function () {
+          fallback.hidden = true;
+          status.textContent = lang === "zh" ? "已复制。" : "Copied.";
+        }, showFallback);
+      } else {
+        showFallback();
+      }
+    });
+    body.appendChild(el("div", { "class": "actions" }, [btn, status]));
+    body.appendChild(fallback);
+    if (s.extra) body.appendChild(both("p", s.extra, "fit"));
+
+    var details = el("details");
+    details.appendChild(both("summary", { zh: "制作条件", en: "How it was made" }));
+    details.appendChild(both("p", s.meta));
+    body.appendChild(details);
+
+    grid.appendChild(el("article", { "class": "card" }, [media, body]));
+  });
+
+  function setLang(lang) {
+    document.body.setAttribute("data-lang", lang);
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    document.querySelectorAll("[data-set-lang]").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-set-lang") === lang));
+    });
+    document.querySelectorAll("textarea.fallback").forEach(function (t) { t.hidden = true; });
+    document.querySelectorAll(".status").forEach(function (t) { t.textContent = ""; });
+    try { localStorage.setItem("vi-lang", lang); } catch (e) {}
+  }
+  document.querySelectorAll("[data-set-lang]").forEach(function (b) {
+    b.addEventListener("click", function () { setLang(b.getAttribute("data-set-lang")); });
+  });
+  var saved = null;
+  try { saved = localStorage.getItem("vi-lang"); } catch (e) {}
+  if (saved === "zh" || saved === "en") setLang(saved);
+  else if (!/^zh/i.test(navigator.language || "")) setLang("en");
+})();
+</script>
+</body>
+</html>

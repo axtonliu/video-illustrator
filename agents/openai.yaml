@@ -1,0 +1,4 @@
+interface:
+  display_name: "Video Illustrator"
+  short_description: "Your voice and real assets into a short cinematic film in a chosen style"
+  default_prompt: "Use $video-illustrator to turn this passage into a short animated explanation."
