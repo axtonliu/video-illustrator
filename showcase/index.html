@@ -78,8 +78,8 @@
   <section class="grid" id="grid" aria-label="Samples"></section>
 
   <footer>
-    <p class="zh">完整视频发布在 YouTube 与 B 站（见每张卡片下方的链接），本仓库不以可下载文件的形式提供 MP4。本地预览时可以把六个 MP4 放进 <code>showcase/videos/</code>（文件名见 <code>videos/README.md</code>）。样片、预览与封面帧包含作者本人的声音、书封和授权配乐，仅作展示，不在 MIT 许可范围内。</p>
-    <p class="en">The full videos are published on YouTube and Bilibili (see the links under each card); this repository does not distribute the MP4 files. For local preview, put the six MP4 files in <code>showcase/videos/</code> (names in <code>videos/README.md</code>). The films, previews and posters contain the author's voice, book cover and licensed music; they are for demonstration only and not covered by the MIT license.</p>
+    <p class="zh">完整视频发布在 YouTube 与 B 站（见每张卡片下方的链接），本仓库不以可下载文件的形式提供 MP4。本地预览时可以把七个 MP4 放进 <code>showcase/videos/</code>（文件名见 <code>videos/README.md</code>）。样片、预览与封面帧包含作者本人的声音、书封和授权配乐，仅作展示，不在 MIT 许可范围内。</p>
+    <p class="en">The full videos are published on YouTube and Bilibili (see the links under each card); this repository does not distribute the MP4 files. For local preview, put the seven MP4 files in <code>showcase/videos/</code> (names in <code>videos/README.md</code>). The films, previews and posters contain the author's voice, book cover and licensed music; they are for demonstration only and not covered by the MIT license.</p>
   </footer>
 </main>
 
@@ -91,6 +91,19 @@
   };
 
   var samples = [
+    { id: "7-editorial-tech",
+      name: { zh: "编辑部科技风 · v0.4", en: "Editorial tech · v0.4" },
+      fit: { zh: "大字排版、终端界面、票据与工牌；有未来感的发布。", en: "Big type, terminal UI, tickets and badges; a launch that feels current." },
+      style: { zh: "编辑部科技风（大字排版、终端界面、票据与工牌这类元素，未来感）", en: "an editorial tech style (big type, terminal UI, tickets and badges, a futuristic feel)" },
+      youtube: "https://youtu.be/9zBcFp49VeU", bilibili: "https://www.bilibili.com/video/BV1RDa56jENM/?p=1",
+      meta: { zh: "Skill 0.4 · Opus 5.5 · high · 25.8 分钟 · 无修改 · API 标价约 US$5.85 + Lyria US$0.04", en: "Skill 0.4 · Opus 5.5 · high · 25.8 min · no revision · about US$5.85 at API list price + US$0.04 Lyria" } },
+    { id: "8-cinematic-3d-v04",
+      name: { zh: "电影感 3D · v0.4", en: "Cinematic 3D · v0.4" },
+      fit: { zh: "预告片的尺度：峡谷、巨门、飞行的镜头，真实书封在揭示时出场。", en: "Trailer scale: canyons, a giant door, a flying camera; the real cover arrives at the reveal." },
+      style: { zh: "电影预告片质感", en: "a cinematic trailer look" },
+      youtube: "https://youtu.be/eyvkcXT8J1g", bilibili: "https://www.bilibili.com/video/BV1RDa56jENM/?p=2",
+      extra: { zh: "这条样片的需求里还附了一段导演说明（场面尺度、至少四个世界、节奏），原文见 SAMPLES.md。需要生成配乐时，可以加一句：“配乐用 Lyria 生成（这次付费调用我授权）”，约 0.04 美元，需要你自己的 OPENROUTER_API_KEY。", en: "This sample's request also carried a director's note (scale, at least four worlds, pacing); see SAMPLES.md for the text. For generated music you can add: “Generate the music with Lyria (I authorize this paid call)”, about US$0.04, using your own OPENROUTER_API_KEY." },
+      meta: { zh: "Skill 0.4 · Opus 5.5 · high · 47.1 分钟 · 无修改 · API 标价约 US$14.67 + Lyria US$0.04 · 3D 路线，GPU 渲染", en: "Skill 0.4 · Opus 5.5 · high · 47.1 min · no revision · about US$14.67 at API list price + US$0.04 Lyria · 3D route, GPU render" } },
     { id: "1-cut-paper",
       name: { zh: "剪纸拼贴", en: "Cut paper" },
       fit: { zh: "温暖、有手作感的故事，纸张层层叠叠。", en: "Warm, hand-made stories with layered paper." },
@@ -115,13 +128,6 @@
       style: { zh: "粒子与生成艺术风格（粒子和光线轨迹聚散成形，流动、有科技感）", en: "a particle and generative-art style (particles and light trails gathering into shapes, flowing, technological)" },
       youtube: "https://youtu.be/Eez9PNYggu8", bilibili: "https://www.bilibili.com/video/BV1mwaV6cE31/?p=4",
       meta: { zh: "Opus 5.5 · high · 首次 28.4 分钟 + 修改 2 次（署名、换配乐）· API 标价约 US$9.81 · 配乐由 Lyria 3 生成", en: "Opus 5.5 · high · 28.4 min + 2 revisions (credit line, then music) · about US$9.81 at API list price · music generated with Lyria 3" } },
-    { id: "5-cinematic-3d",
-      name: { zh: "电影感 3D", en: "Cinematic 3D" },
-      fit: { zh: "预告片式的发布：真实光影、景深、立体书。", en: "Trailer-style launches: real light, depth, a 3D book." },
-      style: { zh: "电影预告片质感", en: "a cinematic trailer look" },
-      youtube: "https://youtu.be/WWHQ861IshY", bilibili: "https://www.bilibili.com/video/BV1mwaV6cE31/?p=5",
-      extra: { zh: "需要生成配乐时，可以加一句：“配乐用 Lyria 生成（这次付费调用我授权）”，约 0.04 美元，需要你自己的 OPENROUTER_API_KEY。", en: "For generated music you can add: “Generate the music with Lyria (I authorize this paid call)”, about US$0.04, using your own OPENROUTER_API_KEY." },
-      meta: { zh: "Opus 5.5 · high · 28.1 分钟 · 无修改 · API 标价约 US$6.41 + Lyria US$0.04 · 3D 路线，GPU 渲染", en: "Opus 5.5 · high · 28.1 min · no revision · about US$6.41 at API list price + US$0.04 Lyria · 3D route, GPU render" } },
     { id: "6-lego-reference",
       name: { zh: "积木（参照版）", en: "Brick world (reference)" },
       fit: { zh: "积木搭出来的真实世界，适合轻松的产品故事。", en: "A world built from bricks, for light-hearted product stories." },

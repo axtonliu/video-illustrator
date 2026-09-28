@@ -2,13 +2,15 @@
 
 [Back to README](../README.md) · [风格页 / Style page](index.html)
 
-One narration, six looks. All six films use the same 20.86-second Chinese narration from
+One narration, six looks. All samples use the same 20.86-second Chinese narration from
 the author's book *重构个体* (recorded in the author's own voice) and the real book cover.
-Samples 1–5 were made by this Skill from a one-sentence request; sample 6 is a reference
-made outside this Skill.
+The README grid shows samples 7 and 8 (Skill 0.4) and 1–4 (earlier versions), all made by
+this Skill from a one-sentence request. Sample 5 is the earlier cinematic sample that 8
+replaced on the grid. Sample 6 is a reference made outside this Skill.
 
-同一段口播，六种画面。六条样片都用作者本人录制的同一段 20.86 秒《重构个体》口播和真实书封。
-第 1–5 条由本 Skill 根据一句话输入生成；第 6 条是作者用内部产线制作的已发布版，**不是本 Skill 生成的**，只作参照。
+同一段口播，六种画面。所有样片都用作者本人录制的同一段 20.86 秒《重构个体》口播和真实书封。
+README 网格展示第 7、8 条（Skill 0.4）和第 1–4 条（更早版本），都由本 Skill 根据一句话输入生成；
+第 5 条是被第 8 条替换下来的旧版电影感样片；第 6 条是作者用内部产线制作的已发布版，**不是本 Skill 生成的**，只作参照。
 
 ## How to read the numbers / 数字口径
 
@@ -142,7 +144,7 @@ Everything else is the request exactly as sent.
   limiter (no sidechain, no dynamic loudnorm). Picture frames are unchanged (verified
   by video-stream md5) and no model was called for this pass.
 
-## 5 · Cinematic 3D / 电影感 3D
+## 5 · Cinematic 3D / 电影感 3D (earlier version, replaced on the grid by 8)
 
 - **Input (verbatim)**:
   > 用 video-illustrator 给我的新书《重构个体》做一段电影预告片质感的宣传短片，1920×1080，带中文字幕。素材都在 inputs/ 里：旁白录音和逐字时间在 inputs/voice/，书封在 inputs/assets/，品牌信息在 inputs/brand/。配乐用 Lyria 生成（这次付费调用我授权）。不要编造书里没有的内容。
@@ -166,6 +168,69 @@ Everything else is the request exactly as sent.
   limiter (no sidechain, no dynamic loudnorm). Picture frames are unchanged (verified
   by video-stream md5) and no model was called for this pass.
 
+## 7 · Editorial tech / 编辑部科技风 (v0.4)
+
+- **Input (verbatim)**:
+  > 用 video-illustrator 给我的新书《重构个体》做一段编辑部科技风（大字排版、终端界面、票据与工牌这类元素，未来感）的宣传短片，1920×1080，带中文字幕。素材都在 inputs/ 里：旁白录音和逐字时间在 inputs/voice/，书封在 inputs/assets/，品牌信息在 inputs/brand/。配乐用 Lyria 生成（这次付费调用我授权，最多 2 次）。不要编造书里没有的内容。运行说明：Bash 每次只执行一条简单命令，不要用分号、&& 或管道串联多条；某条命令被拒时，拆成更简单的命令或换用 Read/Glob 再试，不要因此停下。
+
+  `inputs/brand/brand.json`: `{"display_name": "Axton", "making_of": "一句话生成 · 每一帧都是代码渲染"}`.
+  The last sentence of the request is an operating note for the non-interactive runner's
+  narrow command allowlist, not creative direction.
+- **Skill version**: 0.4.0 (commit `d539341`), 2D route (Canvas).
+- **Time**: 25.8 min.
+- **Cost (API list price)**: **US$5.85**, plus US$0.0396 for one Lyria music call
+  (OpenRouter usage cost, generation id `gen-1790610931-3j9F5UdXrWMsTLWuMdyy`).
+- **Revisions**: 0. An earlier run of the same request, without the operating note, stopped
+  after two minutes when its first compound shell command was refused by the runner's
+  allowlist; it produced a brief but no film and is not counted as a revision.
+- **Length**: 27.5 s.
+- **What v0.4 changed here**: the film is built on one organizing device, a "PASS No.02"
+  whose four fields flip with the narration (door 01 → 02, author — → 我, holder 我 → 你,
+  status 干净 → 写脏) and flip over at 「请把它写脏」; key words land on measured beats
+  (110 BPM) after onset snapping; the real cover appears only at the reveals and the end
+  (about a quarter of the running time).
+- **Music**: generated with Google Lyria 3 (`google/lyria-3-clip-preview`) through
+  OpenRouter, one clip (minimal electronic, synth arpeggio, rimshot; measured 110 BPM).
+  Sound effects synthesized locally by `scripts/sfx.mjs`.
+- **Mix (final pass)**: the Skill run delivered a constant-bed mix at −14.4 LUFS; the operator
+  re-applied the static gain with a lower limiter ceiling (`alimiter` limit 0.79) because
+  AAC encoding pushed the true peak to −0.5 dBFS. Picture frames are unchanged (verified by
+  video-stream md5) and no model was called for this pass.
+
+## 8 · Cinematic 3D / 电影感 3D (v0.4)
+
+- **Input (verbatim)**: the same request shape as sample 7, followed by a director's note.
+  > 用 video-illustrator 给我的新书《重构个体》做一段电影预告片质感的宣传短片，1920×1080，带中文字幕。素材都在 inputs/ 里：旁白录音和逐字时间在 inputs/voice/，书封在 inputs/assets/，品牌信息在 inputs/brand/。配乐用 Lyria 生成（这次付费调用我授权，最多 2 次）。不要编造书里没有的内容。运行说明：Bash 每次只执行一条简单命令，不要用分号、&& 或管道串联多条；某条命令被拒时，拆成更简单的命令或换用 Read/Glob 再试，不要因此停下。
+  >
+  > 导演要求（这支片要让刷到的陌生人停下来，场面要宏大，不是产品广告）：
+  > - 走 3D 路线，但不要停在桌子上。至少 4 个不同的世界，都从旁白和书封里长出来。可以参考、也可以自己想更好的：书封上水泥方块的金色裂缝放大成一道悬崖或峡谷，光从裂缝里涌出；一扇十层楼高的门在无边的暗场里打开，门前的人或书极小；一条很长的走廊，两端各一扇门，表示二十多年；书页铺成的大地，读者的笔迹像闪电一样划过；最后回到真实书封。
+  > - 尺度阶梯：至少 2 个极远景（渺小对宏大），至少 2 个微距。镜头要飞：升起、穿过门、从高空俯冲到物体上。
+  > - 节奏：每 2 拍到 1 小节换一个新镜头，全片至少 12 个镜头；除了片尾卡，任何一个世界停留不超过 2 小节。
+  > - 组织装置：一道金线贯穿全片，从裂缝到门缝再到读者的笔迹；到「请把它写脏」时炸开，满屏都是金色笔迹。
+  > - 最强的一击放在「写脏」的重拍上，这是全片最亮、尺度最大的时刻。
+  > - 书封只在揭示时（「写书的人换成了我」之后）和片尾当主角，出镜不超过全片三分之一；揭示之前不要让封面提前露出来。字幕不要压住封面上的文字和标识。
+  > - 片尾：书封、片名、Axton 和 making_of 那一行小字，音乐按自己的结尾收住。
+  > - 如果 Lyria 带参考图的请求被拦截，改用纯文字提示再试一次。
+
+  `inputs/brand/brand.json`: `{"display_name": "Axton", "making_of": "一句话生成 · 每一帧都是代码渲染"}`.
+- **Skill version**: 0.4.0 (commit `a280c85`, which adds the "Scale: leave the desk" rules to
+  `references/cinematic.md`), 3D route (three.js, rendered with `--gpu`).
+- **Time**: 47.1 min.
+- **Cost (API list price)**: **US$14.67**, plus US$0.0396 for one successful Lyria call
+  (generation id `gen-1790614063-FhQyiqSnmSdvopITHyBR`). The first Lyria request, sent with
+  keyframe reference images, was refused by the provider (`PROHIBITED_CONTENT`) and returned no
+  audio; the run retried with a text-only prompt as the request allowed.
+- **Revisions**: 0. An earlier single pass on Skill `d539341` with the plain request (no
+  director's note) produced a competent but desk-bound film; it was judged not strong enough
+  and is not shown. Its review led to the scale rules in `a280c85`.
+- **Length**: 26.3 s. 18 shots across 8 worlds (a molten crack, a canyon, a corridor between two
+  doors, a ten-storey door, a dark hall, the written page, the real cover, a land of pages).
+- **Music**: Google Lyria 3 (`google/lyria-3-clip-preview`) through OpenRouter: cinematic
+  trailer score, low strings, taiko, felt piano, brass swell (measured 138 BPM). A 0.35 s dip
+  of the music bed before 「脏」 is a deliberate breath before the hit. Sound effects synthesized
+  locally by `scripts/sfx.mjs`.
+- **Mix**: as delivered by the Skill run (−14.7 LUFS, −0.8 dBFS after encoding); no operator pass.
+
 ## 6 · Brick world (reference) / 积木（参照版）
 
 - **Not made by this Skill.** The author made this published version with a separate internal
@@ -188,7 +253,7 @@ the five above, not because the runs failed.
 - **Book cover**: the cover of the author's own book *重构个体：AI时代如何打造个人竞争力*,
   used unchanged (the Skill only scales, moves, lights and crops it). It carries the
   publisher's marks.
-- **Music**: all five Skill-made samples (1–5) shown here use a track generated with
+- **Music**: all Skill-made samples (1–5, 7, 8) use a track generated with
   Google Lyria 3 through the author's own OpenRouter account. Earlier versions of samples
   1–4 used tracks from the author's Artlist subscription, replaced by revision 2 in each
   (see each sample's notes); Artlist music is no longer used in any homepage sample. No

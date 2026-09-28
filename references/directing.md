@@ -50,6 +50,36 @@ Move the camera to disclose something. Hold it still when the object motion alre
 explains enough. Leave time after a reveal for the viewer to understand its result.
 Let pacing follow the content; do not give every beat an identical duration or ease.
 
+## Density: a new idea every bar
+
+For a promo, trailer or anything that must stop a stranger. A plain explainer keeps the
+content's own pace.
+
+- **One new picture idea per bar.** At 90–130 BPM a 4/4 bar lasts 1.8–2.7 s. Without measured
+  music, one idea every 1.5–2.5 s. The picture leads; the narration does not get one picture
+  per sentence.
+- **Count distinct pictures.** A 20-second film has at least 8 pictures a stranger would see as
+  different at thumbnail size. The same desk from another angle, the same cover a little closer,
+  or the same shot with a new caption is not a new picture. A new world, a new subject or a new
+  composition is.
+- **Density is not a reset.** The organizing device from [concept.md](concept.md) and the motif
+  carry across every cut, so the viewer stays oriented while the pictures change.
+- **The real asset leads only at reveals and the end.** Book covers, screenshots and logos are the
+  hero, but on screen for no more than about one third of the running time. Each appearance is an
+  event. The rest of the time, build new worlds from elements inside the asset and images in the
+  narration: the objects, places and gestures it names. The asset itself still stays
+  exactly as supplied whenever it appears.
+- **Big words carry the rhythm.** Key words appear word by word and land on strong beats. Only
+  content words, numbers, names and hook words get big type; never function words (的, 了, the,
+  of, and). Each big word enters on the measured onset of that word from `scripts/onsets.mjs`,
+  within one frame (33 ms at 30 fps).
+- **The scene list is the plan.** One row per bar in `brief.md`
+  (`time · world / composition · new idea · device state · asset on screen`). If two rows
+  describe the same picture, one of them needs a new idea.
+
+`scripts/contact.mjs` measures the result: it counts distinct pictures on the rendered preview
+and estimates the asset's screen time (see [rendering.md](rendering.md#contact-sheet-self-check)).
+
 ## Hand-made motion: poses and exposure
 
 For drawn and hand-made styles (pencil, ink wash, whiteboard, cut paper, clay, pixel,

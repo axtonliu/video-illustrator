@@ -26,6 +26,26 @@ shadow and depth are welcome; aimless gold particles and lens-flare stacks are n
 Derive the palette from the style and the material (a black-and-gold cover can suggest
 light temperature), but make lighting, not color filters, carry the mood.
 
+## Scale: leave the desk
+
+The starter template is a book on a desk under one lamp. It is a way to get the cover
+lit correctly, not the set of the film. Three cinematic runs that stayed on that desk all
+read as a good product shot rather than a film (Axton's review, 2026-09-28: “场面不够宏大”).
+
+- **At least three worlds beyond the table.** Build them from the narration and the
+  asset: a doorway at architectural scale, a corridor or landscape, a sky, a city, a
+  canyon grown out of a crack on the cover. The desk may be one world; it is not the film.
+- **A scale ladder.** Include at least one extreme wide where something is tiny against
+  something vast (a figure or the book before a door ten times its height, the camera
+  rising until the room becomes a speck), and at least one macro. Cut between them;
+  the jump in scale is what reads as epic.
+- **The camera travels.** Crane up, fly through a doorway, drop from the sky onto the
+  object. One move per world that could not be done on a tabletop.
+- **The asset is the destination, not the location.** The real cover appears at the
+  reveals and the end (see [directing.md](directing.md#density-a-new-idea-every-bar));
+  between them the film travels through worlds the cover implies.
+- **No stretch longer than two bars in one world** unless the viewer is reading.
+
 ## The first two seconds
 
 The opening is the strongest moment in the piece, not a warm-up. Within two seconds the
@@ -75,6 +95,9 @@ If one of these genuinely comes from the material, use it once, with intent.
 
 ## Pace: cut more, dwell less
 
+- Default to one new picture idea per bar, with the real asset on screen for no more than about
+  a third of the film; the rules and the scene list are in
+  [directing.md](directing.md#density-a-new-idea-every-bar).
 - Default to short shots and more cuts than an explainer would use. A single shot rarely
   needs more than two or three seconds unless the viewer is reading.
 - Hold only where reading is required. A Chinese line needs roughly one second per four
@@ -142,6 +165,12 @@ renders are several times slower. Measured costs are in
 ## Before delivery
 
 - Watch the full piece once at speed with sound (or state that audio was not auditioned).
-- Contact sheet plus close looks at the first two seconds and the ending.
+- Run `scripts/contact.mjs` on the preview (with `--beats`, `--asset` for each real asset and
+  `--scenes` = the number of scene-list rows) and look at the sheet. For each frame, answer:
+  would I stop scrolling here? Replace the weakest one or two pictures, at most two rounds.
+  Fewer distinct scenes than 70% of the scene list, or an asset on screen in more than half the
+  samples, is a warning: write it into `brief.md` with the numbers. It is a proxy measure and
+  never blocks delivery. See [rendering.md](rendering.md#contact-sheet-self-check).
+- Close looks at the first two seconds and the ending.
 - Loudness near −14 LUFS with no clipping; narration clear over music.
 - Every sound in the `time → action → sound` list is present; no silent visible action.

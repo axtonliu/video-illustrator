@@ -17,9 +17,10 @@ Times are seconds from the start of the file.`;
 const SR = 22050, N = 1024, HOP = 256;
 const HOP_T = HOP / SR;
 
-function decode(input) {
+// Decodes any FFmpeg-readable audio to mono float PCM. Shared with onsets.mjs.
+export function decode(input, sampleRate = SR) {
   return new Promise((resolve, reject) => {
-    const child = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-nostdin', '-i', input, '-ac', '1', '-ar', String(SR), '-f', 'f32le', '-'], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-nostdin', '-i', input, '-ac', '1', '-ar', String(sampleRate), '-f', 'f32le', '-'], { stdio: ['ignore', 'pipe', 'pipe'] });
     const chunks = []; let stderr = '';
     child.stdout.on('data', c => chunks.push(c));
     child.stderr.on('data', d => { stderr = (stderr + d).slice(-4000); });

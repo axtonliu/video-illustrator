@@ -11,5 +11,6 @@
     "display": { "family": "Your Display Font", "file": "fonts/display.woff2" },
     "body": { "family": "Your Body Font", "file": "fonts/body.woff2" }
   },
-  "logo": "logo.svg"
+  "logo": "logo.svg",
+  "making_of": "One prompt · 23 minutes · every frame is code"
 }

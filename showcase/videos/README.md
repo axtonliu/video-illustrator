@@ -13,11 +13,12 @@ YouTube 和 B 站，链接见 `../../README.md` / `../../README.zh-CN.md` 或 `.
 
 | File | Style |
 |---|---|
+| `7-editorial-tech.mp4` | Editorial tech (v0.4) / 编辑部科技风 |
+| `8-cinematic-3d-v04.mp4` | Cinematic 3D (v0.4) / 电影感 3D |
 | `1-cut-paper.mp4` | Cut paper / 剪纸拼贴 |
 | `2-ink-wash.mp4` | Ink wash / 水墨 |
 | `3-pixel-retro.mp4` | Pixel retro / 像素复古 |
 | `4-particles.mp4` | Particles / 粒子光轨 |
-| `5-cinematic-3d.mp4` | Cinematic 3D / 电影感 3D |
 | `6-lego-reference.mp4` | Brick world, reference made outside this Skill / 积木参照版（非本 Skill 生成） |
 
 `*.mp4` in this folder is git-ignored. The films contain the author's voice, book cover and

@@ -138,12 +138,24 @@ Use that measured duration for the scene and `--duration`, then add `--audio /pa
 For a promo or cinematic piece, sound comes before picture:
 
 1. **Narration.** Use the user's recording from `inputs/voice/` and measure it with
-   ffprobe. If `inputs/voice/` also holds an `.srt` or `words.json` with word times,
-   use those times for text hits; otherwise align by listening points you can verify.
-   Speech-recognition word times often start early (a measured case ran 0.05–0.44 s
-   early at phrase starts while phrase ends were accurate), so check each phrase start
-   against the waveform (an RMS envelope or `ffmpeg -af silencedetect`) and use the
-   measured onset for subtitle-in and visual hits. Do not shift the whole file by one offset.
+   ffprobe. If `inputs/voice/` also holds a `words.json` with cue times
+   (`{text, duration, cues:[{text, start, end}]}`; a cue can be a phrase, a word or a
+   character, for example from an external forced-alignment tool), first snap the cue
+   starts to the recording, then use only the snapped times:
+   ```sh
+   node scripts/onsets.mjs --audio /path/to/project/inputs/voice/narration.wav --words /path/to/project/inputs/voice/words.json --output /path/to/project/audio/words.onsets.json
+   ```
+   Speech-recognition times often start early (a measured case ran 0.05–0.44 s early at
+   phrase starts while phrase ends were accurate). The script computes an RMS envelope
+   (10 ms window, 2 ms hop) and moves each cue's `start` to the first quiet-to-loud onset
+   within ±0.45 s (`--window`), never earlier than 50 ms before the previous cue's end and
+   never after the cue's own end. `end` is not changed. Each cue gains `start_raw` and
+   `snap_ms` (positive = moved later); a cue with no onset in its window keeps its time,
+   gets `snap_ms: 0` and is listed in `onset_analysis.unsnapped`. Check those cues by ear or
+   against `ffmpeg -af silencedetect`. Snapping works per cue, so it never shifts the whole
+   file by one offset. With only an `.srt`, convert it to `words.json` cues first; with no
+   times at all, align by listening points you can verify.
+   Subtitle-in and every big on-screen word enter on the snapped start, within one frame.
 2. **Keyframes.** Export 3–4 stills of the planned picture (opening, turn, payoff, end
    card) with `--still`, or pick the key images from `inputs/assets/`. They are checked
    as drafts (see [drafts and keyframes](#drafts-and-keyframes-before-the-full-render))
@@ -172,8 +184,9 @@ For a promo or cinematic piece, sound comes before picture:
    ```
    `beats.json` has `bpm`, `beats[]`, `downbeats[]` (meter assumed 4/4; treat the phase
    as a guess when `downbeat_confidence` is close to 1.0) and `strong_onsets[]`.
-5. **Timeline.** Copy the beat times you use into the scene's timeline object and derive
-   animation times from it; decide where narration starts so its key words sit on beats.
+5. **Timeline.** Copy the beat times and the snapped cue starts from `words.onsets.json`
+   (shifted by where the narration starts in the film) into the scene's timeline object and
+   derive animation times from it; decide where narration starts so its key words sit on beats.
 6. **Sound effects.** Generate starter effects and place one per visible action:
    ```sh
    node scripts/sfx.mjs --out /path/to/project/audio/sfx
@@ -228,10 +241,38 @@ Inspect metadata:
 ffprobe -v error -show_entries format=duration:stream=codec_name,codec_type,width,height,r_frame_rate -of json /path/to/clip.mp4
 ```
 
-Inspect representative frames from the already rendered preview, using one FFmpeg pass rather than relaunching Chromium for each still:
+## Contact sheet self-check
+
+After the motion preview, and again on the final, sample the rendered film instead of
+relaunching Chromium for each still:
 
 ```sh
-ffmpeg -hide_banner -loglevel error -n -i /path/to/clip.mp4 -vf "fps=1/2,scale=480:-1,tile=5x2" -frames:v 1 /path/to/contact-sheet.png
+node scripts/contact.mjs --input /path/to/project/preview.mp4 --output-dir /path/to/project/qa/preview-1 \
+  --beats /path/to/project/audio/beats.json --asset /path/to/project/assets/cover.png --scenes 10
 ```
 
-For the 20-second starting clip this gives up to ten views; adapt sampling to the actual duration and transitions. Do not overwrite an old sheet unintentionally. Inspect the sheet and motion, including transitions and the ending; stills alone do not validate animation. Keep preview/export dimensions and fps at the specified defaults unless the user explicitly asks for a technical override. The presence of an MP4 and successful ffprobe output does not replace watching the motion.
+- **Sampling.** With `--beats`, one frame from the middle of each bar (downbeats are taken as
+  film time, so they must match where the music starts in the film); without it, one frame from
+  the middle of every 2 s (`--interval`).
+- **`contact.png`.** Thumbnails in time order, each labelled with its index, time, and either
+  `NEW` or its distance to the closest earlier frame. A yellow box marks an estimated asset hit.
+- **`contact.json`.** Per frame: `dhash` (256-bit dHash of the frame scaled to 17×16 grey),
+  `min_distance` to every earlier sample and `nearest`, `new_scene`. `distinct_scenes` counts
+  frames whose smallest distance is at least `--threshold` (default 64 of 256), so a camera move
+  on the same picture is not a new scene. With `--asset` (repeatable), each frame gets the best
+  normalized cross-correlation of the downscaled asset at 11 sizes, and `assets[].fraction` is the
+  share of samples at or above `--asset-threshold` (default 0.55). This is an estimate, marked
+  `estimate: true`: it finds the asset upright and facing the camera; a 3D book at an angle,
+  heavy relighting or a partial crop scores lower, so read it as a lower bound and check the sheet.
+- **Warnings.** `--scenes N` (the number of scene-list rows) warns when `distinct_scenes` is below
+  70% of N; any asset estimated in more than half the samples warns too. Warnings go to stderr
+  and `warnings[]`, and the exit code stays 0. Copy them with the numbers into `brief.md`.
+  They are proxy measures: evidence for review, never a gate.
+
+Then look at the sheet. For each frame ask: would a stranger scrolling past stop here? Replace
+the weakest one or two pictures and render a new preview, at most two rounds. Do not overwrite an
+old sheet unintentionally; use a new `--output-dir` per round (the script refuses to overwrite
+without `--overwrite`). Also inspect motion, including transitions and the ending; stills alone
+do not validate animation. Keep preview/export dimensions and fps at the specified defaults
+unless the user explicitly asks for a technical override. The presence of an MP4 and successful
+ffprobe output does not replace watching the motion.

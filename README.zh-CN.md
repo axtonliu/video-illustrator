@@ -12,18 +12,20 @@
 
 <table>
 <tr>
+<td width="33%" valign="top"><a href="https://youtu.be/9zBcFp49VeU"><img src="showcase/previews/7-editorial-tech.webp" alt="编辑部科技风预览" width="100%"></a><br><b>编辑部科技风 <sup>v0.4</sup></b><br>大字排版、终端界面、票据；一张通行证从 01 翻到 02。<br><a href="https://youtu.be/9zBcFp49VeU">在 YouTube 观看</a> · <a href="https://www.bilibili.com/video/BV1RDa56jENM/?p=1">在 B 站观看</a></td>
+<td width="33%" valign="top"><a href="https://youtu.be/eyvkcXT8J1g"><img src="showcase/previews/8-cinematic-3d-v04.webp" alt="电影感 3D 预览" width="100%"></a><br><b>电影感 3D <sup>v0.4</sup></b><br>预告片的尺度：裂缝长成峡谷，十层楼高的门被推开。<br><a href="https://youtu.be/eyvkcXT8J1g">在 YouTube 观看</a> · <a href="https://www.bilibili.com/video/BV1RDa56jENM/?p=2">在 B 站观看</a></td>
 <td width="33%" valign="top"><a href="https://youtu.be/nY3bh-UEwyQ"><img src="showcase/previews/1-cut-paper.webp" alt="剪纸拼贴风格预览" width="100%"></a><br><b>剪纸拼贴</b><br>温暖、有手作感的故事，纸张层层叠叠。<br><a href="https://youtu.be/nY3bh-UEwyQ">在 YouTube 观看</a> · <a href="https://www.bilibili.com/video/BV1mwaV6cE31/?p=1">在 B 站观看</a></td>
-<td width="33%" valign="top"><a href="https://youtu.be/rR1Gh8s7aDE"><img src="showcase/previews/2-ink-wash.webp" alt="水墨风格预览" width="100%"></a><br><b>水墨</b><br>安静、有思考感的内容，墨色与留白。<br><a href="https://youtu.be/rR1Gh8s7aDE">在 YouTube 观看</a> · <a href="https://www.bilibili.com/video/BV1mwaV6cE31/?p=2">在 B 站观看</a></td>
-<td width="33%" valign="top"><a href="https://youtu.be/rnREYCpvWeg"><img src="showcase/previews/3-pixel-retro.webp" alt="像素复古风格预览" width="100%"></a><br><b>像素复古</b><br>把一段经历讲成游戏关卡，轻松好玩。<br><a href="https://youtu.be/rnREYCpvWeg">在 YouTube 观看</a> · <a href="https://www.bilibili.com/video/BV1mwaV6cE31/?p=3">在 B 站观看</a></td>
 </tr>
 <tr>
+<td width="33%" valign="top"><a href="https://youtu.be/rR1Gh8s7aDE"><img src="showcase/previews/2-ink-wash.webp" alt="水墨风格预览" width="100%"></a><br><b>水墨</b><br>安静、有思考感的内容，墨色与留白。<br><a href="https://youtu.be/rR1Gh8s7aDE">在 YouTube 观看</a> · <a href="https://www.bilibili.com/video/BV1mwaV6cE31/?p=2">在 B 站观看</a></td>
+<td width="33%" valign="top"><a href="https://youtu.be/rnREYCpvWeg"><img src="showcase/previews/3-pixel-retro.webp" alt="像素复古风格预览" width="100%"></a><br><b>像素复古</b><br>把一段经历讲成游戏关卡，轻松好玩。<br><a href="https://youtu.be/rnREYCpvWeg">在 YouTube 观看</a> · <a href="https://www.bilibili.com/video/BV1mwaV6cE31/?p=3">在 B 站观看</a></td>
 <td width="33%" valign="top"><a href="https://youtu.be/Eez9PNYggu8"><img src="showcase/previews/4-particles.webp" alt="粒子光轨风格预览" width="100%"></a><br><b>粒子光轨</b><br>科技与变化的主题，光点聚散成形。<br><a href="https://youtu.be/Eez9PNYggu8">在 YouTube 观看</a> · <a href="https://www.bilibili.com/video/BV1mwaV6cE31/?p=4">在 B 站观看</a></td>
-<td width="33%" valign="top"><a href="https://youtu.be/WWHQ861IshY"><img src="showcase/previews/5-cinematic-3d.webp" alt="电影感 3D 预览" width="100%"></a><br><b>电影感 3D</b><br>预告片式的发布：真实光影、景深、立体书。<br><a href="https://youtu.be/WWHQ861IshY">在 YouTube 观看</a> · <a href="https://www.bilibili.com/video/BV1mwaV6cE31/?p=5">在 B 站观看</a></td>
-<td width="33%" valign="top"><a href="https://youtu.be/iRScrftmJCU"><img src="showcase/previews/6-lego-reference.webp" alt="积木参照版预览" width="100%"></a><br><b>积木（参照版）</b><br><i>作者用内部产线制作的参照版，不是本 Skill 生成的。</i>放在这里作对照；原片中这两句口播相隔较远，截取拼接处有一个跳切。<br><a href="https://youtu.be/iRScrftmJCU">在 YouTube 观看</a> · <a href="https://www.bilibili.com/video/BV1fcax6JExX/">在 B 站观看</a></td>
 </tr>
 </table>
 
-每张预览图链接到 YouTube 和 B 站上的完整版（带口播和配乐）；B 站上第 1–5 条是同一个稿件的 5 个分 P，积木一格链接到它所截取的完整新书宣传片。本仓库不分发 MP4 文件本身。第 1–5 条都由一句话输入生成（Claude Code + Opus 5.5，effort high，作者本机环境），其中 4 条追加过两次修改（第 1 次改片尾作者署名，第 2 次把配乐换成 Lyria 生成的版本）。每条的原始指令、Skill 版本、耗时、API 标价口径成本和配乐来源见 [SAMPLES.md](showcase/SAMPLES.md)。另有一个轻量[风格页](showcase/index.html)，可以逐条播放样片，并一键复制对应风格的指令。
+**积木（参照版）**：同一段口播的完整新书宣传片，由作者用内部产线制作，**不是**本 Skill 生成的。[在 YouTube 观看](https://youtu.be/iRScrftmJCU) · [在 B 站观看](https://www.bilibili.com/video/BV1fcax6JExX/)
+
+每张预览图链接到 YouTube 和 B 站上的完整版（带口播和配乐）；本仓库不分发 MP4 文件本身。每一条都由一句话输入生成（Claude Code + Opus 5.5，effort high，作者本机环境）。两条 **v0.4** 样片是 Skill 0.4 一次跑完的：出关键帧之前先定概念和一条贯穿全片的组织装置，每小节一个新画面，字幕按实测起音落拍，交付前自己看联系表（电影感那条的需求里附了一段导演说明）。另外四条用更早的版本制作，各追加过两次修改（片尾署名、换成 Lyria 生成的配乐）。每条的原始指令、Skill 版本、耗时、API 标价口径成本和配乐来源见 [SAMPLES.md](showcase/SAMPLES.md)。另有一个轻量[风格页](showcase/index.html)，可以逐条播放样片，并一键复制对应风格的指令。
 
 ## 怎么用
 

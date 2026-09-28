@@ -1,8 +1,64 @@
-# Validation status — 0.3.2
+# Validation status — 0.4.0
 
 Designed for Claude Code + Opus 5.5. Other hosts are unverified.
 Style references, the cinematic treatment and the 3D starter scene are guidance, not
 proof of quality.
+
+## 0.4.0: concept step, onset snapping and contact-sheet self-check, macOS, 2026-09-28 (Apple M4 Pro, Node 24.3, FFmpeg 7.1.1)
+
+`npm test`: **25 pass, 0 fail, 0 skipped** (the twenty 0.3.2 tests unchanged, five new).
+`beats.mjs` now exports its FFmpeg decoder for reuse; its behaviour and tests are unchanged.
+
+`scripts/onsets.mjs` (`tests/onsets.test.mjs`, three tests):
+
+- Synthetic narration (48 kHz, noise floor about −60 dBFS, voiced bursts with a 3 ms attack at
+  0.8, 2.0, 3.3 and 5.7 s). Cues starting 200 ms early, 250 ms late and 300 ms early snapped to
+  0.801, 2.001 and 3.301 s (1 ms error each; the test allows 10 ms). A cue whose only onset is
+  700 ms away kept its start, got `snap_ms: 0` and was listed as unsnapped; with `--window 0.8`
+  it reached the onset. `end`, `text` and a `chars` array pass through unchanged.
+- The search window does not reach back past the previous cue's end (minus 50 ms) or forward
+  past the cue's own end.
+- CLI: one-line stdout summary, `start_raw` and `snap_ms` on every cue, refuses to overwrite,
+  rejects a cue without numeric `start <= end`.
+
+Real run (not in the suite): the 20.86 s showcase narration with its speech-recognition
+`words.json` (12 phrase cues). All 12 cues snapped, all later than the recognized start, by
+437, 253, 151, 369, 118, 240, 276, 94, 281, 77, 283 and 45 ms. This matches the direction and
+size of the earlier manual check (phrase starts 0.05–0.44 s early). An independent
+`ffmpeg -af silencedetect=n=-36dB:d=0.04` pass put the same speech starts 5–30 ms earlier
+than the snapped times; silencedetect reacts to single samples, the script to a 10 ms RMS
+window. A short breath at 15.50 s was not taken as the start of the next phrase (it never
+reached the loud level). Not auditioned.
+
+`scripts/contact.mjs` (`tests/contact.test.mjs`, two tests):
+
+- Synthetic 12 s clip generated with FFmpeg: 4 s of picture P, 4 s of a different picture Q
+  with a textured 96×136 "asset" on it, 4 s of a 20 px/s pan across P. Sampled every 2 s:
+  `distinct_scenes` = 2; Q's distance to P was at least 64 of 256; the pan frames stayed under
+  64. The asset was found in exactly the two Q samples (score 0.96, box within 3% of the true
+  position) and nowhere else (0.44); `fraction` 0.333 marked `estimate: true`. `--scenes 4`
+  produced one warning on stderr and in `warnings[]` with exit code 0. The sheet is a 5×2 grid.
+- Bar sampling from `downbeats`, extension before the first and after the last downbeat,
+  interval sampling, dHash bits and hex, distance bookkeeping, and exact template location.
+
+Baseline on the 0.3.x showcase films (not in the suite; 2 s sampling, no beats file, asset =
+the book cover). These are the numbers v0.4 samples should be compared with:
+
+| Film | Samples | `distinct_scenes` | Cover estimate | Cover by eye on the same sheet |
+|---|---:|---:|---:|---|
+| `5-cinematic-3d.mp4` (30.0 s) | 15 | 7 | 4 of 15 (0.267) | front-facing in 6 of 15, at an angle in 2 more |
+| `1-cut-paper.mp4` (25.5 s) | 13 | 9 | 4 of 13 (0.308) | 4 of 13 |
+
+The estimate missed the cinematic cover where a bright light washed over it or the book stood
+at an angle; it is a lower bound. Scores on frames without the cover reached 0.54 (a close-up
+of the cover's own title lettering), which is why the default threshold is 0.55. By eye the
+cinematic film has 8–9 different pictures in 15 samples; the dHash count of 7 missed the cut
+from the cover close-up to the open book (distance 54): both frames are a centred rectangle
+on a dark ground, which dHash at 17×16 barely separates. Each run took about 16 s.
+
+Document checks: SKILL.md now reads concept → scene list → keyframes → music → beats →
+onsets → timeline → preview → contact self-check → final. `brand.json` gained the optional
+`making_of` line. These are document checks; no film has been made with 0.4.0 yet.
 
 ## 0.3.2: served-root default and music reference images, macOS, 2026-09-27 (Apple M4 Pro, Node 24.3, FFmpeg 7.1.1, Playwright 1.63.0)
 
@@ -52,6 +108,18 @@ file with its sha256.
 Not auditioned: nobody listened to A, B or C for this validation. Whether references make
 the music fit the picture better is a listening judgment, and one call per condition
 cannot separate the effect of the images from run-to-run variation.
+
+## Showcase samples with 0.4 (2026-09-28)
+
+Two more films were accepted by the author and now lead the showcase grid: editorial tech
+(Skill `d539341`, one pass, no revision) and cinematic 3D (Skill `a280c85`, one pass, no
+revision; its request carried a director's note on scale and pacing). Same narration and
+book cover as the earlier five. A first cinematic pass on 0.4 without the director's note
+stayed on a desk and was not accepted; that review produced the scale rules in
+`references/cinematic.md`. Both films were judged by the author on viewing; the
+contact-sheet counts in `scripts/contact.mjs` were recorded but under-count dark 3D scenes
+and are not the acceptance criterion. Inputs, time, cost and music sources are in
+[showcase/SAMPLES.md](showcase/SAMPLES.md).
 
 ## Showcase samples (2026-09-27)
 
