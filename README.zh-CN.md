@@ -23,7 +23,7 @@
 </tr>
 </table>
 
-每张预览图链接到 YouTube 和 B 站上的完整版（带口播和配乐）；上面的链接目前是占位符，会在每条样片发布后替换成真实地址——本仓库不分发 MP4 文件本身。第 1–5 条都由一句话输入生成（Claude Code + Opus 5.5，effort high，作者本机环境），其中 4 条追加过一次修改，只改片尾作者署名。每条的原始指令、Skill 版本、耗时、API 标价口径成本和配乐来源见 [SAMPLES.md](showcase/SAMPLES.md)。另有一个轻量[风格页](showcase/index.html)，可以逐条播放样片，并一键复制对应风格的指令。
+每张预览图链接到 YouTube 和 B 站上的完整版（带口播和配乐）；上面的链接目前是占位符，会在每条样片发布后替换成真实地址——本仓库不分发 MP4 文件本身。第 1–5 条都由一句话输入生成（Claude Code + Opus 5.5，effort high，作者本机环境），其中 4 条追加过两次修改（第 1 次改片尾作者署名，第 2 次把配乐换成 Lyria 生成的版本）。每条的原始指令、Skill 版本、耗时、API 标价口径成本和配乐来源见 [SAMPLES.md](showcase/SAMPLES.md)。另有一个轻量[风格页](showcase/index.html)，可以逐条播放样片，并一键复制对应风格的指令。
 
 ## 怎么用
 

@@ -23,7 +23,7 @@ The same 20.86-second narration (the author's own voice) and the same real book 
 </tr>
 </table>
 
-Each preview links to the full video (with narration and music) on YouTube and Bilibili; the links above are placeholders until each sample is published there — this repository does not distribute the MP4 files themselves. Samples 1–5 were each made from a one-sentence request with Claude Code + Opus 5.5 (high effort) in the author's environment; four of them had one follow-up to change the author credit line. The exact requests, Skill versions, time, cost at API list price and music sources are in [SAMPLES.md](showcase/SAMPLES.md). A small [style page](showcase/index.html) plays each sample and copies a ready-made request for that style.
+Each preview links to the full video (with narration and music) on YouTube and Bilibili; the links above are placeholders until each sample is published there — this repository does not distribute the MP4 files themselves. Samples 1–5 were each made from a one-sentence request with Claude Code + Opus 5.5 (high effort) in the author's environment; four of them had two follow-ups (the credit line, then swapping the music bed for a Lyria-generated clip). The exact requests, Skill versions, time, cost at API list price and music sources are in [SAMPLES.md](showcase/SAMPLES.md). A small [style page](showcase/index.html) plays each sample and copies a ready-made request for that style.
 
 ## How it works
 

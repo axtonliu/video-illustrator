@@ -178,26 +178,49 @@ For a promo or cinematic piece, sound comes before picture:
    ```sh
    node scripts/sfx.mjs --out /path/to/project/audio/sfx
    ```
-7. **Mix**, then render the picture with `--audio mix.wav`. Example with narration
-   starting at 0.5 s, music ducked under the voice, two effects on beats, and loudness
-   normalized to about −14 LUFS:
+7. **Mix**, then render the picture with `--audio mix.wav`.
+
+   **Music level stays constant under the narration.** Do not duck the music with a
+   sidechain compressor, and do not use single-pass (dynamic) `loudnorm` on the final
+   mix: both make the music swell every time the voice pauses, which listeners find
+   unpleasant (Axton's review of the first promo samples). Set one static music gain,
+   low enough that the voice stays clearly on top everywhere, and keep it for the whole
+   spoken part. The only planned rise is after the last spoken word, into the end card.
+
+   **Music ends like music.** Never hard-cut a track. Request a length a few seconds
+   longer than the film, end on a bar line after a resolving phrase, and use a fade of
+   at least 2–3 s that starts on a bar; or extend the end card so the track's own
+   ending fits. A clip that stops mid-phrase reads as broken.
+
+   Example with narration starting at 0.5 s and ending at 18.0 s in a 20 s film, a fixed
+   music bed, a 1.5 s rise into the end card, two effects on beats, then static
+   normalization:
    ```sh
    ffmpeg -hide_banner -loglevel error -n \
      -i voice.wav -i music.wav -i sfx/whoosh.wav -i sfx/impact.wav \
      -filter_complex "\
-   [0:a]aformat=sample_rates=48000:channel_layouts=stereo,adelay=500:all=1,apad=whole_dur=20,asplit=2[voice][key];\
-   [1:a]aformat=sample_rates=48000:channel_layouts=stereo,atrim=0:20,volume=0.45[music];\
-   [music][key]sidechaincompress=threshold=0.02:ratio=8:attack=15:release=350[bed];\
+   [0:a]aformat=sample_rates=48000:channel_layouts=stereo,adelay=500:all=1,apad=whole_dur=20[voice];\
+   [1:a]aformat=sample_rates=48000:channel_layouts=stereo,atrim=0:20,\
+   volume='0.22+0.28*clip((t-18.0)/1.5,0,1)':eval=frame[bed];\
    [2:a]aformat=sample_rates=48000:channel_layouts=stereo,adelay=1741:all=1,volume=0.6[s1];\
    [3:a]aformat=sample_rates=48000:channel_layouts=stereo,adelay=3738:all=1,volume=0.8[s2];\
-   [voice][bed][s1][s2]amix=inputs=4:duration=first:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[mix]" \
-     -map "[mix]" -c:a pcm_s16le mix.wav
+   [voice][bed][s1][s2]amix=inputs=4:duration=first:normalize=0,aresample=48000[mix]" \
+     -map "[mix]" -c:a pcm_s16le mix_raw.wav
    ```
-   Replace `20` with the film duration and the `adelay` values (milliseconds) with the
-   actual beat times. `apad=whole_dur` makes the voice branch define the mix length.
-   Tune the music `volume` and the compressor threshold by ear; the narration must stay
-   clearly on top. Single-pass `loudnorm` lands near the target (a test mix measured
-   −15.6 LUFS, −1.5 dBFS peak); check with `ffmpeg -i mix.wav -af ebur128=peak=true -f null -`.
+   Then normalize without dynamic gain: measure the integrated loudness of `mix_raw.wav`
+   (`ffmpeg -i mix_raw.wav -af ebur128=peak=true -f null -`), apply one static
+   `volume=<−14 − measured>dB`, and follow it with a fast peak limiter that only touches
+   voice transients, for example `alimiter=limit=0.84:attack=2:release=50:level=disabled`.
+   Do not rely on two-pass `loudnorm` with `linear=true`: when the target would push the
+   true peak over the ceiling, ffmpeg silently falls back to dynamic mode (observed on
+   all five homepage samples), which brings back the pumping. Check afterwards that the
+   level change in a speech pause equals the static gain (a measured case: +3.4 dB in a
+   pause, +3.3 dB during speech).
+   Replace the numbers with the film's actual narration end, duration and beat times.
+   `0.22` is a starting bed level (about 13 dB under the music's own level); check that
+   the narration is clearly on top during the loudest music passage. Verify the result:
+   `ffmpeg -i mix.wav -af ebur128=peak=true -f null -` for loudness, and listen (or state
+   that it was not auditioned) to confirm the bed does not change level in speech pauses.
 
 Inspect metadata:
 

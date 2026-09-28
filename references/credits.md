@@ -64,8 +64,7 @@ or adapted implementation needs its own attribution and license review.
 
 ### Showcase media
 
-The showcase films contain music from Artlist (“Peace” by Musical Mandalas, “Space Disco”
-by Stefano Mastronardi, “Genesis” by Quinten Coblentz), used under the author's Artlist
-license, and one track generated with Google Lyria 3. No audio file is distributed with
-this package. The films, previews and posters are not covered by the MIT license; see
+The homepage showcase films' music was generated with Google Lyria 3 clips through the
+author's own OpenRouter account. No audio file is distributed with this package. The
+films, previews and posters are not covered by the MIT license; see
 [showcase/SAMPLES.md](../showcase/SAMPLES.md).

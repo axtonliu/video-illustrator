@@ -247,7 +247,8 @@ export async function generate(opts) {
   const warnings = [];
   const filters = ['aresample=48000'];
   if (returned > target + 0.05) {
-    const fade = Math.min(1.5, target / 4);
+    // A clip that stops mid-phrase reads as broken; use a long fade (rendering.md: end on a bar, fade 2–3 s).
+    const fade = Math.min(3, target / 4);
     filters.push(`atrim=0:${target}`, `afade=t=out:st=${(target - fade).toFixed(3)}:d=${fade.toFixed(3)}`);
   } else if (returned < target - 0.05) {
     warnings.push(`Returned music is ${returned.toFixed(2)} s, shorter than the requested ${target} s; not padded.`);
