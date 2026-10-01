@@ -47,6 +47,24 @@ orientation. A clean cut between overview and detail can be clearer than a long 
 Keep speed changes meaningful. Moving everything constantly can hide the important
 operation. Let a bottleneck, transformation, or branching choice receive the attention.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 1s
+- enter / exit: 12–18 f / 8–12 f
+- ease: cubic-bezier(0.3, 1.1, 0.4, 1.05) (in) / cubic-bezier(0.5, 0, 0.75, 0) (out)
+- overshoot: ≤ 3%   squash-stretch: ≤ 6%
+- reading hold: ≥ 0.8 s   end hold: ≥ 1.5 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Projection.** 2:1 dimetric (edges at 26.565°), tiles 64×32 px at 1280; every object stands on the tile grid.
+- **Face lighting.** Top face 115%, left face 100%, right face 80% of the base value, unchanged for the whole film.
+- **Drop-in build.** Objects fall 40–80 px onto their tile, squash up to 6% for 2–3 frames and kick up 4–6 dust pixels; neighbours stagger 3–4 frames along the path the viewer should follow.
+
 ## Sound
 
 Optional contact, transport, or mechanism sounds can differentiate actions. Give an

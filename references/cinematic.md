@@ -76,11 +76,22 @@ black, no establishing drift. If the first frame alone could open any other vide
 ## Every visible action has a sound
 
 A landing, a slide, a cut, a paper fold, a click: each gets a sound that matches its
-material. `scripts/sfx.mjs` provides a small procedural starter set (whoosh, impact,
-tick, paper); layer and pitch them rather than repeating one sample. Keep a short list
-in `brief.md` of `time → action → sound` and check that every row is in the final mix.
-Plan at least one near-silence before the turn or the final reveal; the first sound
-after it should be one of the most important in the piece.
+material. Use the user's own recordings from `inputs/sfx/` first when they exist; otherwise
+`scripts/sfx.mjs` synthesizes a small starter set (whoosh, impact, tick, paper, riser,
+sparkle). Either way, measure each file's peak into `sfx.json` and put the **peak** on the
+beat, not the file start ([rendering.md](rendering.md#audio-first-workflow), step 6).
+Keep a short list in `brief.md` of `time → action → sound` and check that every row is in
+the final mix. Plan at least one near-silence before the turn or the final reveal; the first
+sound after it should be one of the most important in the piece.
+
+- **Riser → impact → sparkle** is the phrase for the biggest moment (the reveal, the end
+  card): a riser whose peak lands on the hit, the impact on the hit itself as the loudest
+  sound of the film, and a sparkle 0.5–0.8 s later as the tail. Use it once or twice, not on
+  every cut.
+- **No machine-gun repeats.** Two effects of the same kind are at least 150 ms apart. When one
+  sound repeats, alternate two samples (two seeds, or two user files), or vary each repeat by
+  ±2 semitones and ±2 dB (`sfx.mjs --place … --semitones 2 --gain-db -2` keeps the peak on the
+  target). When hits come too fast to count, replace them with one continuous swoosh.
 
 ## One motif, from the material
 
@@ -105,15 +116,19 @@ If one of these genuinely comes from the material, use it once, with intent.
   letters plus a beat. A title card deserves a real hold.
 - Vary the speed: at least one clear acceleration and one breath.
 - Transitions come from motion, not dissolves: fast push-ins, whip pans with the next
-  shot entering from the direction of travel, a match on the motif's shape. Keep one
-  transition grammar for the whole piece.
+  shot entering from the direction of travel, a match on the motif's shape. Hard cuts on
+  the beat are the default; pick one or two signature forms from
+  [transitions.md](transitions.md) for the whole piece and write each seam's form in the
+  scene list.
 
 ## Finish with restraint
 
 Motion blur and film grain help only in small amounts. Blur the fast moves (a whip, a
 snap) and leave holds sharp. Keep grain lighter on light grounds and never so heavy
 that real assets lose legibility. Loud vignettes, chromatic aberration and shake are
-seasoning for one moment, not a coat of paint.
+seasoning for one moment, not a coat of paint. The numbers (full-frame impacts, light
+effects, one hero device, one camera move at a time) are in the
+[restraint budget](directing.md#restraint-budget).
 
 ## Real assets stay real
 
@@ -162,6 +177,16 @@ blur and grain. Report `gl_renderer`: if it says SwiftShader, the GPU was not us
 renders are several times slower. Measured costs are in
 [rendering.md](rendering.md#3d-route-threejs).
 
+## Motion tokens
+
+When cinematic is the look itself (the 3D route with no other style named), start from these values. Layered on another style, that style's tokens apply. How to use them: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 1s, with sub-frame motion blur on fast moves
+- enter / exit: 18–30 f / 8–12 f (camera moves / whips)
+- ease: cubic-bezier(0.65, 0, 0.35, 1) (in) / cubic-bezier(0.8, 0, 0.9, 0.4) (out)
+- overshoot: none   squash-stretch: none
+- reading hold: ≥ 0.8 s   end hold: ≥ 2.0 s
+
 ## Before delivery
 
 - Watch the full piece once at speed with sound (or state that audio was not auditioned).
@@ -171,6 +196,8 @@ renders are several times slower. Measured costs are in
   Fewer distinct scenes than 70% of the scene list, or an asset on screen in more than half the
   samples, is a warning: write it into `brief.md` with the numbers. It is a proxy measure and
   never blocks delivery. See [rendering.md](rendering.md#contact-sheet-self-check).
+- Independent review against [aesthetic-rules.md](aesthetic-rules.md), one fix round, as in
+  [review.md](review.md).
 - Close looks at the first two seconds and the ending.
 - Loudness near −14 LUFS with no clipping; narration clear over music.
 - Every sound in the `time → action → sound` list is present; no silent visible action.

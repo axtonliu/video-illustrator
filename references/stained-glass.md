@@ -31,6 +31,24 @@ it, decide which seams belong to the figure and which belong to the frame. Do no
 let rigid lead joints behave like liquid without an intentional transformation.
 A closer view can reveal how a local piece contributes to the final whole.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 1s
+- enter / exit: 30–48 f / 20–30 f
+- ease: cubic-bezier(0.37, 0, 0.63, 1) (in) / cubic-bezier(0.37, 0, 0.63, 1) (out)
+- overshoot: none   squash-stretch: none
+- reading hold: ≥ 1.2 s   end hold: ≥ 2.0 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Lead came.** 4–8 px dark lines between panes with a 1 px highlight on one side; panes never overlap the lead.
+- **Lit panes.** A pane lights by rising from 35% to 100% brightness over 12–24 frames; only the brightest pane blooms, by 3–6 px.
+- **Travelling light.** A light moving behind the window lights panes in order of their distance from it, 2–4 frames apart.
+
 ## Sound and implementation
 
 Optional sustained tones or small accents can accompany illumination if produced.

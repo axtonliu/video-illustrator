@@ -39,6 +39,24 @@ Hold the camera during a delicate derivation. A pan can follow expanding work, a
 a cut can juxtapose two solutions. A final wider view can reveal how earlier parts
 support the result. Avoid zooms that make notation unreadable during a key step.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 2s
+- enter / exit: 14–22 f / 10–14 f
+- ease: cubic-bezier(0.4, 0, 0.2, 1) (in) / cubic-bezier(0.6, 0, 0.8, 0.4) (out)
+- overshoot: none   squash-stretch: none
+- reading hold: ≥ 1.0 s   end hold: ≥ 1.5 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Chalk grain.** Stroke alpha is cut by a static, board-anchored noise so 25–40% of the stroke's pixels are missing, more at the edges.
+- **Smudge erase.** An erased mark stays at 8–15% opacity, widened by a 4–8 px blur, for the rest of the scene.
+- **Dust on emphasis.** An underline or circle drops 6–12 dust specks that fall 10–20 px over 10 frames; once per key point.
+
 ## Optional sound
 
 Brief chalk and eraser accents may make a visible action tangible if actually made.

@@ -40,6 +40,25 @@ A still view allows subtle edge and color changes to read. A slow move can follo
 subject through its environment, while a cut can separate memories or stages cleanly.
 Keep depth restrained enough that layers still feel painted rather than plastic.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 1s (washes spread continuously)
+- enter / exit: 30–45 f / 20–30 f
+- ease: cubic-bezier(0.25, 0.1, 0.25, 1) (in) / cubic-bezier(0.42, 0, 1, 1) (out)
+- overshoot: none   squash-stretch: none
+- reading hold: ≥ 1.0 s   end hold: ≥ 1.8 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Wash spread.** A wash reveals through a noisy radial mask that grows 60–120 px per second, with a 2–3 px pigment rim about 15% darker at the moving edge.
+- **Granulation.** Static, paper-anchored speckle at 8–15% density, inside washes only.
+- **Wet-in-wet bloom.** A second colour dropped into a wet wash spreads 20–40 px over 18–24 frames with a soft, scalloped edge; at most once per scene.
+- **Glazing.** Layers combine with multiply at 40–70% alpha; no area takes more than three glazes.
+
 ## Optional sound
 
 Light environmental detail or a restrained musical texture may support the scene.

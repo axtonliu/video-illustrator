@@ -40,6 +40,24 @@ consequence. A controlled lighting change can reveal relief without moving the c
 Cuts may create useful shifts of scale; constant orbiting often distracts from mass.
 Allow expressive stroke rhythm without making the entire frame pulse uniformly.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 2s (paint lands stroke by stroke; the camera moves on 1s)
+- enter / exit: 20–30 f / 14–20 f
+- ease: cubic-bezier(0.65, 0, 0.35, 1) (in) / cubic-bezier(0.7, 0, 0.84, 0) (out)
+- overshoot: none   squash-stretch: ≤ 4%
+- reading hold: ≥ 1.0 s   end hold: ≥ 1.8 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Directional strokes.** Strokes 30–90 px long and 10–24 px wide follow the form; each keeps a fixed seeded bristle pattern of 6–12 grooves.
+- **Impasto light.** One fixed light direction (for example upper left) gives every stroke a 1–2 px highlight edge and a 1–2 px shadow edge.
+- **Paint-on reveal.** The image appears in painting order, 2–4 strokes per exposure on 2s, not as a finished picture fading in.
+
 ## Optional sound
 
 A low contact, drag, or scrape can support an actual heavy or painted action.

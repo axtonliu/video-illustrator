@@ -1,8 +1,122 @@
-# Validation status — 0.4.0
+# Validation status — 0.6.0
 
 Designed for Claude Code + Opus 5.5. Other hosts are unverified.
 Style references, the cinematic treatment and the 3D starter scene are guidance, not
 proof of quality.
+
+## 0.6.0: brand pack v2, check and brand sheet, macOS, 2026-10-01 (Apple M4 Pro, Node 24.3, Playwright 1.63.0)
+
+`npm test`: **43 pass, 0 fail, 0 skipped** (the thirty-six 0.5.0 tests, seven new in
+`tests/brand.test.mjs`). No 0.5 test changed its expectation.
+
+`scripts/brand.mjs --check`:
+
+- Each of the six error codes (`json_parse`, `schema_unknown`, `file_missing`, `hex_invalid`,
+  `film_palette_incomplete`, `accent_max_area_range`) has at least one failing pack; the CLI
+  exits 1 and prints the code. Each of the 31 warning codes has a pack that produces it while
+  `ok` stays true. A further assertion reads every `error(...)`/`warn(...)` code from the script
+  and fails if one has no case.
+- v1: the 0.5 `brand.example.json` content (no `schema`) passes with no errors; its only
+  warning is new, `contrast_low` (gold accent on cream, 2.18:1, under the 3:1 non-text limit).
+  A v1 file with a font file, a licence beside it and a logo passes with no warnings.
+- `--tokens`: names, `name(mode)` and dotted paths resolve against an upstream token JSON;
+  mismatches and unresolved names are warnings. A private pack with six `palette_sources`
+  checked against its upstream token file: 0 errors, 0 warnings.
+- The neutral examples (`references/brand.example.json`, `references/brand-example/`) pass with
+  no warnings, and a test keeps their shared fields identical.
+
+`--sheet`: the example pack renders a 1920 × 3236 PNG in about 1 s (one measuring pass, then
+`render.mjs --still`); a pack with an error is refused and no PNG is written. The sheet was
+looked at for the example pack and for a private dark pack (19 MB of fonts linked, not
+copied); text, swatches, motifs, the end card iframe and the motion curves all render.
+
+Private-value guard: the test hashes every hex colour in the package's text files and every
+word in the brand files and compares them with truncated sha256 hashes of the author's private
+token values and names, so neither the package nor the test lists them. Tried by hand: each
+listed private value is recognised; "Remember December, members" is not.
+
+Not checked: AR-16 with a real film and a clean-context reviewer (the rule and the reviewer
+inputs are in place; no film has been made with a v2 pack yet); Linux and Windows (the sheet
+links the pack with a symlink, a junction on Windows); font family names are not read from the
+font files.
+
+## 0.5.0: peak-aligned sound effects, motion check, tokens, transitions and review, macOS, 2026-09-30 (Apple M4 Pro, Node 24.3, FFmpeg 7.1.1, Playwright 1.63.0)
+
+`npm test`: **36 pass, 0 fail, 0 skipped** (the twenty-five 0.4.0 tests, eleven new). One 0.4
+test changed its expectation: the synthetic contact clip (two 4 s held pictures, then a pan to
+the last frame) now also produces the two new motion warnings, so it expects three warnings
+instead of one.
+
+`scripts/sfx.mjs` (`tests/audio.test.mjs`, three new tests):
+
+- `sfx.json` records each file's `peak_s`, the time of its largest 16-bit sample as written.
+  With seed 1: whoosh 0.350 s of 0.7 s, paper 0.268 of 0.45, impact 0.006, tick 0.004, riser
+  1.508 of 1.6, sparkle 0.099. The 0.4 mix example delayed the whoosh by the beat time
+  itself, so its loudest moment sounded about 10 frames late (the research note measured
+  0.291 s with a 10 ms RMS window; the sample maximum is 0.350 s; either way it was late).
+- Placement through FFmpeg on a generated whoosh: targets 1.0 s (adelay), 0.1 s (head trimmed
+  with `atrim` + `asetpts`), 0.12 s at +2 semitones and 0.9 s at −2 semitones all put the
+  loudest decoded sample within 2 ms of the target. Without `asetpts` the trimmed effect keeps
+  its old timestamps and lands late again; the helper always adds it.
+- `--measure` on a stereo 44.1 kHz user file: `type: "user"`, `peak_s` within 1 ms of the
+  decoded maximum, file hash unchanged, entries merged with the synthesized ones.
+
+AAC offset of `render.mjs` (click test, `tests/render.test.mjs`, new test; also run by hand
+at 320×180): a 0.5 ms click at 1.000 s in the source and a white flash from frame 30.
+
+| Source audio | Decoded click, edit list honoured | Edit list ignored | Offset in frames (30 fps) |
+|---|---:|---:|---:|
+| 48 kHz WAV | 0.99998 s (−0.02 ms) | 1.0213 s (+21.3 ms) | 0.001 / 0.64 |
+| 44.1 kHz WAV | 0.99998 s (−0.02 ms) | 1.0232 s (+23.2 ms) | 0.001 / 0.70 |
+
+The extra 21–23 ms is the AAC encoder's 1024 priming samples; the MP4 edit list hides them
+and both streams report `start_time` 0. Under one frame either way, so `render.mjs` does not
+compensate (the 0.5 design rule). The test fails if a future FFmpeg pushes it past one frame.
+Not checked: QuickTime, browsers, or platform transcodes (YouTube, Bilibili) individually.
+
+`scripts/contact.mjs` motion (`tests/contact.test.mjs`, two new tests): an FFmpeg-generated
+10 s clip (2 s moving, 4 s frozen, 3.5 s moving and dark, 0.5 s frozen) measured exactly
+`longest_still_s` 4.0 (2.0–6.0 s), `end_hold_s` 0.5 and `dark_ratio` 0.35; default limits warned
+on the first two only, `--dark-max 0.3` added the third, exit code 0 throughout. Unit cases
+cover run lengths, a fade to black after a held picture (counted as held) and a clip that
+never moves.
+
+Baseline on earlier films (not in the suite; defaults: still threshold 1.0 of 255 on
+96×54 grey thumbnails at 4 fps, dark below grey 40):
+
+| Film | `longest_still_s` | `end_hold_s` | `dark_ratio` | Warnings |
+|---|---:|---:|---:|---|
+| `1-cut-paper.mp4` | 1.25 | 2.75 | 0 | none |
+| `2-ink-wash.mp4` | 2.75 | 1.75 | 0 | none |
+| `3-pixel-retro.mp4` | 2.5 | 2.25 | 0.302 | none |
+| `4-particles.mp4` | 4.75 (17.25–22.0 s) | 2.25 | 0.951 | still, dark |
+| `5-cinematic-3d.mp4` (0.3) | 1.75 | 4.5 | 0.375 | none |
+| `7-editorial-tech.mp4` (0.4) | 1.25 | 4.0 | 0.055 | none |
+| `8-cinematic-3d-v04.mp4` (0.4 rerun) | 0.5 | 3.5 | 0.476 | none |
+| 0.4 cinematic, first run | 1.0 | 3.5 | 0.451 | none |
+
+By eye, the particle film's 4.75 s is a held layout in which small lines draw themselves (a
+question mark, a graph): under about 1% of the frame changes, which the check counts as
+still, as documented. The first 0.4 cinematic run, criticised for ten seconds on book pages,
+does not warn: the camera kept moving, so that problem belongs to the scene count and the
+sheet, not to the motion check. Three films end on a fade to black after a hold; before the
+fade-tolerant end hold they measured 0 s. A first threshold of 0.6 split the 0.3 cinematic
+film's held end card (grain and a slow push, differences 0.5–0.9) into pieces; 1.0 does not.
+
+`tests/styles.test.mjs` (five new tests, document checks): all 25 atlas entries (24 styles and
+the cinematic look) have Motion tokens that parse; each declared overshoot equals what its
+entrance curve does (a curve marked `none` never passes 1; a curve with overshoot stays within
+its declared percentage); every end hold is at least the 1.0 s `contact.mjs` limit; no two
+styles share a token set (24 distinct entrance curves among the 25). Every style has 2–4 Signature craft
+items, each with a number, none copied between styles. transitions.md has nine forms, each with
+use, frames (with numbers), a Canvas and a three.js recipe, and where not to use it.
+aesthetic-rules.md rules are numbered in order and each cites a quote or an external benchmark.
+Examples in SKILL.md and references/ contain none of the showcase films' themes.
+
+Not yet validated: no film has been made with 0.5.0. The tokens, transitions, craft cards,
+acting subject and the independent review are guidance whose effect on a film is untested;
+the planned check is a cut-paper rerun of the same narration and cover at 1920×1080 beside the
+0.3 sample. (Later: four 0.5 films were made; see "Showcase samples with 0.5" below.)
 
 ## 0.4.0: concept step, onset snapping and contact-sheet self-check, macOS, 2026-09-28 (Apple M4 Pro, Node 24.3, FFmpeg 7.1.1)
 
@@ -108,6 +222,19 @@ file with its sha256.
 Not auditioned: nobody listened to A, B or C for this validation. Whether references make
 the music fit the picture better is a listening judgment, and one call per condition
 cannot separate the effect of the images from run-to-run variation.
+
+## Showcase samples with 0.5 (2026-09-30)
+
+Four films made with Skill 0.5.0 (commit `fe9c9b9`) replaced the earlier cut-paper, ink-wash,
+pixel-retro and particle samples on the showcase grid. Each was one pass of a one-sentence
+request with 0 revisions, on the same narration and book cover, reusing the earlier sample's
+Lyria music from `inputs/music/` (no new Lyria call). The independent review ran in every film:
+pixel retro passed AR-01, AR-02 and AR-06 in round 1; the other three went to round 2 and still
+had at least one ✗ there, which the run fixed once more without a further review. A first
+cut-paper pass on `3aa99e4`, with only one review fix round, was not adopted and led to the
+second-round rule. These films show the 0.5 rules producing a film the author accepted in
+these four styles; they do not separate the effect of each rule. Inputs, time, cost and review
+rounds are in [showcase/SAMPLES.md](showcase/SAMPLES.md); the earlier versions stay listed there.
 
 ## Showcase samples with 0.4 (2026-09-28)
 
@@ -249,6 +376,6 @@ disclosure. These are document checks, not proof that a model will follow them.
 
 One cinematic piece has been made end to end (voice + real assets + generated music +
 effects, 0.3.0, the cinematic 3D showcase sample). Installation on another machine, other
-hosts, Windows/Linux, automatic style selection, `brand.json` fields beyond
-`display_name`, the Pro and `lyria-3.5` music models, whether reference images audibly
+hosts, Windows/Linux, automatic style selection, a v2 brand pack used in a
+real film (only the check and the brand sheet are tested), the Pro and `lyria-3.5` music models, whether reference images audibly
 improve the fit, and most visual styles remain unverified.

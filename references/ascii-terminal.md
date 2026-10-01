@@ -45,6 +45,24 @@ Scrolling can express history or incoming work. Keep the current process in a st
 scrolling would erase the context needed to understand it. Use an abrupt grid replacement only for a clear
 change of view or stage.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 1s, one character cell per frame while typing; the cursor blinks 530 ms on, 530 ms off
+- enter / exit: 6–10 f / 3–5 f (typing itself runs at one character per frame)
+- ease: cubic-bezier(0, 0, 1, 1) (in) / cubic-bezier(0, 0, 1, 1) (out)
+- overshoot: none   squash-stretch: none
+- reading hold: ≥ 0.8 s   end hold: ≥ 1.5 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Cell grid.** 16×32 px cells at 1280×720 (an 80×22 grid); every glyph snaps to a cell, including moving ones.
+- **Typing.** One character per frame with a 4–8 frame pause after punctuation; the cursor stays solid while typing and blinks only while idle.
+- **Phosphor (optional).** 1 px scanlines at 8–12% darkening and a one-frame 20% trail on changed cells; nothing flickers on text that must be read.
+
 ## Sound
 
 Optional restrained keystrokes or electronic pulses may mark real visual operations. A silent clip does not

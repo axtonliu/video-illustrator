@@ -31,6 +31,24 @@ Let the feature determine the path and reveal. An endless slow turntable may be 
 valid material study but does not automatically constitute an explanatory film.
 Hold the useful final view rather than moving away before its meaning registers.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 1s
+- enter / exit: 24–36 f / 16–22 f
+- ease: cubic-bezier(0.4, 0, 0.6, 1) (in) / cubic-bezier(0.4, 0, 1, 1) (out)
+- overshoot: none   squash-stretch: none
+- reading hold: ≥ 1.0 s   end hold: ≥ 2.0 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Edge light.** A 1–2 px bright rim on every glass edge, strongest where the edge faces the key light, with a 2–4 px darker inner band that shows thickness.
+- **Refraction offset.** Whatever sits behind a pane is displaced 4–12 px and blurred 2–6 px, fixed per pane thickness.
+- **Specular sweep.** One highlight band crosses the object once in 18–24 frames at 45°; it spends one light effect in the restraint budget.
+
 ## Sound and implementation
 
 Optional tonal or contact accents can follow a real reveal; silence remains valid.

@@ -45,6 +45,25 @@ Frame the relation between actors before cutting closer to a decisive gesture. U
 consequence changes the surrounding world. Camera motion should help read the acting rather than compensate
 for weak poses.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 2s for acting (the camera moves on 1s)
+- enter / exit: 10–14 f / 8–10 f
+- ease: cubic-bezier(0.34, 1.56, 0.64, 1) (in) / cubic-bezier(0.55, 0, 1, 0.45) (out)
+- overshoot: ≤ 10%   squash-stretch: ≤ 12%
+- reading hold: ≥ 0.7 s   end hold: ≥ 1.0 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Anticipation.** Before any big action, 3–6 frames in the opposite direction, 10–20% of the move's distance.
+- **Follow-through.** Loose parts (hair, scarf, tail, a strap) lag the body by 2–4 frames and settle over 8–12 frames.
+- **Line and fill.** 3–4 px constant outline, flat fills, one shadow tone 15–20% darker, no gradients.
+- **Blinks.** Three frames closed, every 2–5 seconds, never on a cut.
+
 ## Sound
 
 Optional light contact sounds or brief tonal reactions can support physical events. Avoid implying dialogue

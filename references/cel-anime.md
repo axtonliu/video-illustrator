@@ -43,6 +43,25 @@ Use establishing views, reaction views, or close-ups for their narrative functio
 across cuts unless a visible transition reorients the viewer. Parallax reveals depth; it should not make a
 still subject seem to slide through space.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 3s for character acting (camera and effects on 1s)
+- enter / exit: 6–10 f / 4–8 f
+- ease: cubic-bezier(0.12, 1.2, 0.25, 1.05) (in) / cubic-bezier(0.8, 0, 0.9, 0.3) (out)
+- overshoot: ≤ 4%   squash-stretch: ≤ 6%
+- reading hold: ≥ 0.8 s   end hold: ≥ 1.2 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Hard shadow shapes.** One hard-edged shadow 20–30% darker and an optional highlight shape, drawn per pose rather than computed per frame.
+- **Smear frame.** On the fastest 1–2 frames of a swing, one smear drawing stretched 1.5–3× along the motion replaces the pose.
+- **Living holds.** In a held pose only hair or cloth moves, on 3s, by 1–3 px; everything else holds.
+- **Background pan.** Backgrounds pan on 1s at a steady 60–200 px per second while characters stay on 3s.
+
 ## Sound
 
 Optional environmental sound, a pause, or a brief accent can support a change of focus. Do not assume an

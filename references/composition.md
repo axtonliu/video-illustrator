@@ -62,11 +62,26 @@ reference can override these defaults; extract its transferable properties inste
 of claiming to recreate its creator's exact work.
 
 Use the user's `inputs/brand/brand.json` when supplied, for the film's own typography,
-credits and end card; the public skill does not impose a personal brand palette.
+credits and end card (the whole film when a v2 pack sets `palette_scope: "film"`, see
+[brand.md](brand.md)); the public skill does not impose a personal brand palette.
 Otherwise the chosen style governs color: echo a real asset's colors as an accent if
 useful, but do not let the asset's dominant colors take over every style. Choose a
 light, legible ground as an ordinary starting point unless the style, subject or
 reference calls for another treatment.
+
+## Production-detail type
+
+Small type can add a layer of craft to the frame: a scene number in a corner, a section mark,
+the measured tempo of the music (`♩ = 104`, from `beats.json`), the book's title and year, a
+take number that is the organizing device. Use it as a typographic detail at 1.5–2.5% of the
+frame height, in the film's own typography, aligned to the grid, never competing with the
+subject.
+
+It may only carry information that is **true of this film**: the actual scene number, the
+measured BPM, the title and year printed on the supplied asset, a date the source states.
+Never invent production facts or statistics to decorate the frame (fake take counts, render
+times, file sizes, coordinates, percentages). A `making_of` line appears only when
+`brand.json` supplies it, on the end card, exactly as written (see SKILL.md, brand fields).
 
 ## A usable authoring brief
 

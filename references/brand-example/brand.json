@@ -1,0 +1,47 @@
+{
+  "$comment": "Neutral example brand pack (a fictional studio). Copy this folder to inputs/brand/ and edit. Paths are relative to this folder. Field guide: ../brand.md.",
+  "schema": "video-illustrator.brand.v2",
+  "display_name": "Lumen Field",
+  "making_of": "Every frame is code",
+  "palette": {
+    "ground": "#F2EEE6",
+    "surface": "#E7E1D5",
+    "ink": "#1E2622",
+    "ink_secondary": "#56615B",
+    "primary": "#2E4A3F",
+    "accent": "#C2502F"
+  },
+  "palette_sources": { "ground": "paper.warm", "accent": "clay" },
+  "palette_scope": "film",
+  "accent_rules": {
+    "max_area": 0.06,
+    "per_frame": 1,
+    "forms": ["flat line", "signal dot", "numerals"],
+    "never": ["gradient", "glow", "bevel"]
+  },
+  "fonts": {
+    "display": { "family": "Georgia" },
+    "body": { "family": "Helvetica Neue" },
+    "mono": { "family": "Menlo" }
+  },
+  "type_scale": { "hero": 0.15, "title": 0.075, "body": 0.04, "micro": 0.02 },
+  "motion": {
+    "cadence": "on 1s",
+    "enter": [14, 20],
+    "exit": [10, 14],
+    "ease": { "in": [0.3, 0.1, 0.2, 1], "out": [0.5, 0, 0.9, 0.6] },
+    "overshoot": "none",
+    "squash": "none",
+    "reading_hold": 1.0,
+    "end_hold": 2.0
+  },
+  "motifs": [
+    { "id": "contour", "what": "three thin contour lines with one marked summit", "use_when": "a section opens on terrain, a goal, or a high point", "file": "motifs/contour.svg" }
+  ],
+  "sound": { "logo": "", "music_prompt": "", "sfx_dir": "" },
+  "endcard": "templates/endcard.html",
+  "forbid": ["rainbow gradients", "glowing outlines", "stock icons of lightbulbs or rockets"],
+  "references": [
+    { "url": "https://example.com/reference", "learn": "one line drawn across a still frame carries the idea", "avoid": "its film grain and its typeface" }
+  ]
+}

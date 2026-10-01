@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="400" height="240">
+  <!-- Example motif: three contour lines and one marked summit. Colours come from the page's
+       --brand-* custom properties when the SVG is inlined; opened on its own it draws in currentColor. -->
+  <g fill="none" stroke-linecap="round" style="stroke: var(--brand-ink-secondary, currentColor)" stroke-width="1.5">
+    <path d="M30 190 C 90 120, 150 200, 210 130 S 330 110, 370 160"/>
+    <path d="M70 185 C 120 140, 160 190, 210 145 S 300 130, 330 165" opacity="0.7"/>
+    <path d="M120 180 C 150 155, 180 180, 212 160 S 270 150, 290 170" opacity="0.45"/>
+  </g>
+  <circle cx="212" cy="158" r="4" style="fill: var(--brand-accent, currentColor)"/>
+</svg>

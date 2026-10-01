@@ -74,11 +74,53 @@ content's own pace.
   of, and). Each big word enters on the measured onset of that word from `scripts/onsets.mjs`,
   within one frame (33 ms at 30 fps).
 - **The scene list is the plan.** One row per bar in `brief.md`
-  (`time · world / composition · new idea · device state · asset on screen`). If two rows
-  describe the same picture, one of them needs a new idea.
+  (`time · world / composition · new idea · device state · asset on screen · transition in`).
+  If two rows describe the same picture, one of them needs a new idea. The last column names how
+  this shot arrives (`cut` by default; the vocabulary is in [transitions.md](transitions.md)).
 
 `scripts/contact.mjs` measures the result: it counts distinct pictures on the rendered preview
 and estimates the asset's screen time (see [rendering.md](rendering.md#contact-sheet-self-check)).
+
+## A subject that acts
+
+Give the film at least one subject that performs an action with a whole arc, not only things
+that slide in and stop. The subject can be a character, an object (a drawer, a key, a paper
+plane) or the real asset itself (a cover tossed into frame that skids to a stop, a
+screenshot that folds itself into a card). Real assets still move only as a whole: scale,
+position, rotation, crop, light.
+
+- **Anticipation**: a small move the other way, or a gathering, 3–8 frames.
+- **Action**: the move itself, at the speed the style's tokens allow.
+- **Follow-through**: what keeps going after the main move (loose parts, a skid, a bounce,
+  dust), 4–12 frames.
+- **Settle**: it comes to rest and holds at least the style's reading hold.
+
+Mark it in the scene list's new-idea column, for example
+`the key twists [act: anticipation → turn → rattle → still]`. One acting subject per film is
+the minimum; a promo usually has two or three moments like this. A title that fades in, a
+card that slides and stops, or a camera move alone is not an acting subject.
+
+## Restraint budget
+
+For a 30-second film; for a longer one multiply by duration ÷ 30 and round down (a 45 s film:
+4 impacts, 3 light effects). A shorter film keeps the 30-second numbers.
+
+- **Full-frame impacts ≤ 3.** A white flash, a whole-screen shake, a burst that fills the
+  frame. Put them on the strongest hits (the turn, the reveal, the end), not on every downbeat;
+  everything else animates inside the picture.
+- **Light effects ≤ 2.** A sweep of light across a surface, a lens flare, a flicker, a glow
+  that blooms. A transition hidden in a flash of light counts as one.
+- **One device is the hero once.** A technique (a crash zoom, a paper tear, a morph, a slow
+  motion) leads one moment of the film. Used again it becomes wallpaper; use it as a quieter
+  supporting move or not at all.
+- **One camera move at a time.** A push, a pan, a crane or an orbit, one per shot. Do not stack
+  a slow floating zoom on top of another move, and do not add float to a still object to keep
+  the picture busy.
+- **Mark the budget in the brief.** Tag scene-list rows that spend it (`[impact]`, `[light]`,
+  `[hero: crash zoom]`) and add one line under the scene list:
+  `Budget (30 s): impacts 2/3 at 4.2 s, 17.9 s · light 1/2 at 12.0 s · hero device: paper tear at 8.4 s`.
+- The style's own tokens set how fast things move (see [styles.md](styles.md#motion-tokens));
+  this budget sets how often the loud things happen.
 
 ## Hand-made motion: poses and exposure
 

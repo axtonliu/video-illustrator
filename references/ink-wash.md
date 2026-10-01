@@ -39,6 +39,25 @@ how an action extends through a landscape; a closer view can expose pressure or 
 Cuts and changes of scale are useful when empty-space travel delays understanding.
 Let the final arrangement remain visible beyond the last stroke.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 1s (ink spreads continuously; a living subject acts on 2s)
+- enter / exit: 24–40 f / 18–30 f
+- ease: cubic-bezier(0.22, 0.61, 0.36, 1) (in) / cubic-bezier(0.33, 0, 0.67, 1) (out)
+- overshoot: none   squash-stretch: none
+- reading hold: ≥ 1.2 s   end hold: ≥ 2.0 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Pressure-shaped stroke.** Width along the stroke = base × (0.35 + 0.65 × sin(π·u)^0.7), u from 0 to 1; base 14–28 px for trunks and ridges, 3–6 px for twigs and grass.
+- **Dry brush.** Where the pressure term falls below 0.3, break the stroke with seeded gaps covering 20–35% of that stretch; the seed belongs to the stroke and never changes.
+- **Bleed after contact.** After a stroke lands, its edge blur grows from 0 to 3–6 px over 12–20 frames, then freezes; the paper never keeps crawling.
+- **Value ladder.** Four ink values (about 100%, 60%, 30%, 12%) on warm paper, and at least 40% of the frame left unpainted.
+
 ## Optional sound
 
 A sparse breath, liquid movement, or brush contact may accompany a real event.

@@ -34,6 +34,24 @@ Rotate to reveal a previously hidden surface; hold the view during a precise cla
 Reassemble when understanding the final relationship is the payoff. Not every film
 needs a full exploded view or the same draw-explode-assemble sequence.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 1s
+- enter / exit: 16–24 f / 10–14 f
+- ease: cubic-bezier(0.25, 0, 0.1, 1) (in) / cubic-bezier(0.55, 0, 1, 0.45) (out)
+- overshoot: none   squash-stretch: none
+- reading hold: ≥ 1.0 s   end hold: ≥ 1.5 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Construction order.** Centre lines (1 px, dash 12/4/2/4) → outlines (2 px) → dimensions (1 px, 8 px arrowheads), each layer starting 6–10 frames after the previous one.
+- **Sheet grid.** 32 px major and 8 px minor lines at 12% and 5% opacity, fixed to the sheet, not to the camera.
+- **Callout leaders.** A leader line grows from the part at 0° or 45° in 8–12 frames; its label types in only after the line arrives.
+
 ## Sound and implementation
 
 Optional dry ticks can mark fitting or alignment if sound is actually produced.

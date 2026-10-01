@@ -45,7 +45,7 @@ Rules:
 
 One concrete object at the end that states the film's claim for it. It is held long enough to
 read (1.5–3 s) and belongs only to this subject. Examples: the finished drawing pinned over the
-first failed sketch; a pass card stamped with the last lesson number; a receipt that lists
+first failed sketch; a certificate signed on the last lesson; a receipt that lists
 what the viewer gets. The real asset may be the prop, or appear beside it.
 
 ## Self-check (three questions)

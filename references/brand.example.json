@@ -1,16 +1,38 @@
 {
-  "$comment": "Copy to inputs/brand/brand.json and edit. Every field except display_name is optional. Paths are relative to inputs/brand/.",
-  "display_name": "Your Name",
+  "$comment": "A brand pack can be this single file (copy it to inputs/brand/brand.json) or a folder with fonts, motifs and an end card (see brand-example/). Only display_name matters to v1; without \"schema\" the file is read as v1 (display_name, palette, fonts, logo, making_of). Field guide: brand.md. Font entries may add \"file\" and \"license\" paths relative to the brand folder.",
+  "schema": "video-illustrator.brand.v2",
+  "display_name": "Lumen Field",
+  "making_of": "Every frame is code",
   "palette": {
-    "primary": "#1F3A5F",
-    "accent": "#C9A227",
-    "ground": "#F6F3EC",
-    "ink": "#1A1A1A"
+    "ground": "#F2EEE6",
+    "surface": "#E7E1D5",
+    "ink": "#1E2622",
+    "ink_secondary": "#56615B",
+    "primary": "#2E4A3F",
+    "accent": "#C2502F"
+  },
+  "palette_scope": "credits",
+  "accent_rules": {
+    "max_area": 0.06,
+    "per_frame": 1,
+    "forms": ["flat line", "signal dot", "numerals"],
+    "never": ["gradient", "glow", "bevel"]
   },
   "fonts": {
-    "display": { "family": "Your Display Font", "file": "fonts/display.woff2" },
-    "body": { "family": "Your Body Font", "file": "fonts/body.woff2" }
+    "display": { "family": "Georgia" },
+    "body": { "family": "Helvetica Neue" },
+    "mono": { "family": "Menlo" }
   },
-  "logo": "logo.svg",
-  "making_of": "One prompt · 23 minutes · every frame is code"
+  "type_scale": { "hero": 0.15, "title": 0.075, "body": 0.04, "micro": 0.02 },
+  "motion": {
+    "cadence": "on 1s",
+    "enter": [14, 20],
+    "exit": [10, 14],
+    "ease": { "in": [0.3, 0.1, 0.2, 1], "out": [0.5, 0, 0.9, 0.6] },
+    "overshoot": "none",
+    "squash": "none",
+    "reading_hold": 1.0,
+    "end_hold": 2.0
+  },
+  "forbid": ["rainbow gradients", "glowing outlines", "stock icons of lightbulbs or rockets"]
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Contact sheet, distinct-scene count and real-asset screen time for a rendered clip.
+// Contact sheet, distinct-scene count, real-asset screen time and motion (stillness, end hold, darkness) for a rendered clip.
 // FFmpeg extracts and scales frames; hashing and template matching run in plain Node.
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -23,13 +23,32 @@ of the downscaled asset against the downscaled frame at several sizes. It only f
 roughly upright and facing the camera; perspective, heavy relighting or partial crops lower
 the score. The result is an estimate, labelled as such.
 --scenes N (the scene-list count from brief.md) adds a warning when distinct_scenes < 70% of N.
-An asset on screen in more than half of the samples also adds a warning. Warnings never fail
-the run; they are evidence for the brief.`;
+An asset on screen in more than half of the samples also adds a warning.
+
+Motion (always measured, separate from the contact-sheet sampling): the whole clip is read at
+4 frames per second as 96-pixel-wide grey thumbnails; each pair of neighbouring samples gets
+the mean absolute grey difference (0-255). contact.json "motion" reports:
+  end_hold_s       length of the final run in which the picture stays settled (differences below
+                   --still-threshold, or only a uniform fade such as a fade to black); 0 if the
+                   last samples still move
+  longest_still_s  longest run before that final hold whose differences stay below
+                   --still-threshold (a clip that never moves reports its whole length)
+  dark_ratio       share of samples whose mean grey level is below --dark-threshold
+Durations are counted in whole 0.25 s samples. A small element moving inside a large still
+picture (under about 1% of the frame) stays below the threshold and counts as still.
+Defaults and warning limits:
+  --still-threshold 1.0    --dark-threshold 40
+  --still-max 3            warn when longest_still_s > 3 s
+  --end-hold-min 1.0       warn when end_hold_s < 1.0 s
+  --dark-max 0.5           warn when dark_ratio > 0.5 (a dark 3D film can state why in brief.md)
+Warnings never fail the run; they are evidence for the brief.`;
 
 const HASH_W = 17, HASH_H = 16;
 const ANALYSIS_SHORT = 144;                       // short side of the frame used for asset matching
 const ASSET_SCALES = [0.2, 0.25, 0.3, 0.36, 0.43, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]; // asset height as a fraction of frame height (landscape)
 const THUMB_LONG = 320;
+const MOTION_RATE = 4, MOTION_LONG = 96;           // motion samples per second; thumbnail long side
+export const MOTION_DEFAULTS = { stillThreshold: 1.0, darkThreshold: 40, stillMax: 3, endHoldMin: 1.0, darkMax: 0.5 };
 const round3 = x => Math.round(x * 1000) / 1000;
 
 function run(command, args, { binary = false } = {}) {
@@ -99,6 +118,68 @@ export function distinctScenes(hashes, threshold = 64) {
     return { min_distance: min, nearest, new_scene: k === 0 || min >= threshold };
   });
   return { frames, distinct: frames.filter(f => f.new_scene).length };
+}
+
+// Stillness, end hold and darkness from grey frames sampled at a fixed rate.
+// A pair of neighbouring samples is "still" when their mean absolute grey difference is below the
+// threshold. For the end hold a pair also counts as settled when the only change is a uniform gain
+// (a fade to black on a held picture). The final settled run is end_hold_s; longest_still_s is the
+// longest still run before it, so a long title hold at the end is not reported twice. A clip that
+// never moves at all reports its whole length for both. Runs of k pairs span (k + 1) / rate seconds.
+export function motionStats(frames, { rate = MOTION_RATE, stillThreshold = MOTION_DEFAULTS.stillThreshold, darkThreshold = MOTION_DEFAULTS.darkThreshold } = {}) {
+  const n = frames.length;
+  const means = frames.map(f => { let sum = 0; for (let i = 0; i < f.length; i++) sum += f[i]; return sum / f.length; });
+  const diffs = [], settled = [];
+  for (let k = 1; k < n; k++) {
+    const a = frames[k - 1], b = frames[k];
+    const gain = means[k - 1] > 0.5 ? means[k] / means[k - 1] : 1;
+    let sum = 0, residual = 0;
+    for (let i = 0; i < a.length; i++) { sum += Math.abs(a[i] - b[i]); residual += Math.abs(b[i] - gain * a[i]); }
+    diffs.push(sum / a.length);
+    settled.push(sum / a.length < stillThreshold || residual / a.length < stillThreshold);
+  }
+  let tail = diffs.length;                               // first pair of the final settled run
+  while (tail > 0 && settled[tail - 1]) tail--;
+  const endPairs = diffs.length - tail;
+  const endHold = endPairs ? (endPairs + 1) / rate : 0;
+  let longest = 0, range = null, start = null;
+  for (let k = 0; k <= tail; k++) {
+    const still = k < tail && diffs[k] < stillThreshold;
+    if (still && start === null) start = k;
+    if (!still && start !== null) {
+      const seconds = (k - start + 1) / rate;
+      if (seconds > longest) { longest = seconds; range = [start / rate, k / rate + 1 / rate]; }
+      start = null;
+    }
+  }
+  if (tail === 0 && endPairs) { longest = endHold; range = [0, n / rate]; }
+  const dark = means.filter(m => m < darkThreshold).length;
+  const sorted = [...diffs].sort((x, y) => x - y);
+  return {
+    rate_fps: rate, samples: n, still_threshold: stillThreshold, dark_threshold: darkThreshold,
+    longest_still_s: round3(longest), longest_still_range_s: range && range.map(round3),
+    end_hold_s: round3(endHold), end_hold_from_s: endPairs ? round3(tail / rate) : null,
+    dark_ratio: n ? round3(dark / n) : 0,
+    diff_median: sorted.length ? round3(sorted[Math.floor(sorted.length / 2)]) : null
+  };
+}
+
+export function motionWarnings(motion, { stillMax = MOTION_DEFAULTS.stillMax, endHoldMin = MOTION_DEFAULTS.endHoldMin, darkMax = MOTION_DEFAULTS.darkMax } = {}) {
+  const warnings = [];
+  if (motion.longest_still_s > stillMax) warnings.push(`longest_still_s ${motion.longest_still_s} (${motion.longest_still_range_s.join('-')} s) is over ${stillMax} s: nothing moves for that long.`);
+  if (motion.end_hold_s < endHoldMin) warnings.push(`end_hold_s ${motion.end_hold_s} is under ${endHoldMin} s: the last picture does not settle before the film ends.`);
+  if (motion.dark_ratio > darkMax) warnings.push(`dark_ratio ${motion.dark_ratio} is over ${darkMax}: most samples are darker than grey level ${motion.dark_threshold} (state the reason in brief.md if the film is meant to be dark).`);
+  return warnings;
+}
+
+async function motionFrames(input, meta) {
+  const landscape = meta.width >= meta.height;
+  const w = landscape ? MOTION_LONG : Math.max(2, Math.round(MOTION_LONG * meta.width / meta.height / 2) * 2);
+  const h = landscape ? Math.max(2, Math.round(MOTION_LONG * meta.height / meta.width / 2) * 2) : MOTION_LONG;
+  const data = await run('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-nostdin', '-i', input, '-an', '-vf', `fps=${MOTION_RATE},scale=${w}:${h}:flags=area,format=gray`, '-f', 'rawvideo', '-'], { binary: true });
+  const size = w * h, frames = [];
+  for (let offset = 0; offset + size <= data.length; offset += size) frames.push(new Uint8Array(data.buffer, data.byteOffset + offset, size));
+  return { frames, width: w, height: h };
 }
 
 // Best zero-mean normalized cross-correlation of a template anywhere in the frame (both grey, Uint8).
@@ -244,6 +325,9 @@ export async function contact(opts) {
     if (opts.scenes && scenes.distinct < 0.7 * opts.scenes) warnings.push(`distinct_scenes ${scenes.distinct} is below 70% of the scene list (${opts.scenes}).`);
     for (const a of assetSummary) if (a.fraction > 0.5) warnings.push(`${path.basename(a.file)} is estimated on screen in ${Math.round(a.fraction * 100)}% of samples (more than half).`);
     if (frames.length < 2) warnings.push('Only one frame was sampled; the scene count says nothing.');
+    const sampled = await motionFrames(input, meta);
+    const motion = { ...motionStats(sampled.frames, { stillThreshold: opts.stillThreshold, darkThreshold: opts.darkThreshold }), thumbnail: `${sampled.width}x${sampled.height}`, method: 'mean absolute grey difference (0-255) between neighbouring samples; grey level 0-255 full range' };
+    warnings.push(...motionWarnings(motion, { stillMax: opts.stillMax, endHoldMin: opts.endHoldMin, darkMax: opts.darkMax }));
 
     const result = {
       source: input,
@@ -260,6 +344,7 @@ export async function contact(opts) {
         ...(f.assetHits.length ? { assets: Object.fromEntries(f.assetHits.map(h => [h.name, { score: h.score, present: h.present, box: h.box }])) } : {})
       })),
       assets: assetSummary,
+      motion,
       sheet, labels,
       warnings,
       note: 'Proxy measures for review. Warnings are evidence for brief.md, not a pass/fail gate.'
@@ -273,7 +358,8 @@ export async function contact(opts) {
 
 function parse(argv) {
   const opts = { assets: [], overwrite: false };
-  const map = { input: 'input', 'output-dir': 'outputDir', beats: 'beats', threshold: 'threshold', interval: 'interval', scenes: 'scenes', 'asset-threshold': 'assetThreshold' };
+  const map = { input: 'input', 'output-dir': 'outputDir', beats: 'beats', threshold: 'threshold', interval: 'interval', scenes: 'scenes', 'asset-threshold': 'assetThreshold',
+    'still-threshold': 'stillThreshold', 'dark-threshold': 'darkThreshold', 'still-max': 'stillMax', 'end-hold-min': 'endHoldMin', 'dark-max': 'darkMax' };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--help') return null;
@@ -284,7 +370,8 @@ function parse(argv) {
     opts[key] = argv[++i];
   }
   if (!opts.input || !opts.outputDir) throw Error('--input and --output-dir are required. Use --help.');
-  for (const [k, lo, hi] of [['threshold', 1, 256], ['interval', 0.1, 60], ['scenes', 1, 1000], ['assetThreshold', 0, 1]]) {
+  for (const [k, lo, hi] of [['threshold', 1, 256], ['interval', 0.1, 60], ['scenes', 1, 1000], ['assetThreshold', 0, 1],
+    ['stillThreshold', 0, 255], ['darkThreshold', 0, 255], ['stillMax', 0, 600], ['endHoldMin', 0, 60], ['darkMax', 0, 1]]) {
     if (opts[k] === undefined) continue;
     opts[k] = Number(opts[k]);
     if (!(opts[k] >= lo && opts[k] <= hi)) throw Error(`Invalid --${k.replace(/[A-Z]/g, c => '-' + c.toLowerCase())}: must be between ${lo} and ${hi}.`);
@@ -303,7 +390,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(await realpath(process.
         if (await access(file).then(() => true, () => false)) throw Error(`Output already exists: ${file}. Use --overwrite to replace it.`);
       }
       const r = await contact(opts);
-      console.log(JSON.stringify({ sheet: r.sheet, json: r.json, frames: r.frames_sampled, sampling: r.sampling.mode, distinct_scenes: r.distinct_scenes, assets: r.assets.map(a => ({ file: path.basename(a.file), fraction: a.fraction, estimate: true })), warnings: r.warnings }));
+      console.log(JSON.stringify({ sheet: r.sheet, json: r.json, frames: r.frames_sampled, sampling: r.sampling.mode, distinct_scenes: r.distinct_scenes, assets: r.assets.map(a => ({ file: path.basename(a.file), fraction: a.fraction, estimate: true })), motion: { longest_still_s: r.motion.longest_still_s, end_hold_s: r.motion.end_hold_s, dark_ratio: r.motion.dark_ratio }, warnings: r.warnings }));
       for (const w of r.warnings) console.error(`warning: ${w}`);
     }
   } catch (error) {

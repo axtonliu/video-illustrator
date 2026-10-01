@@ -31,6 +31,24 @@ Choose camera motion for spatial information: a parallax move reveals depth, a r
 reveals reach, a local approach inspects a mechanism. Hold when object motion is
 already sufficient. Keep orientation through cuts with a landmark or direction.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 1s
+- enter / exit: 18–26 f / 12–16 f
+- ease: cubic-bezier(0.45, 0, 0.15, 1) (in) / cubic-bezier(0.6, 0, 0.9, 0.4) (out)
+- overshoot: none   squash-stretch: none
+- reading hold: ≥ 0.9 s   end hold: ≥ 1.8 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Flat shading.** One normal per face, 200–1500 faces per landmark, a key light at a fixed angle so faces read as at least five distinct values.
+- **Facet assembly.** A landmark builds face by face, 20–40 faces per frame flying in 30–60 px, finished in 18–26 frames.
+- **Distance fog.** Linear fog to the sky colour from 40% to 100% of the far range, so distance reads without detail.
+
 ## Sound and implementation
 
 Optional spatial accents can support contact or arrivals. Silence is valid.

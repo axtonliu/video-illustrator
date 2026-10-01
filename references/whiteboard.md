@@ -45,6 +45,25 @@ when it removes needless camera travel.
 The ending should let the viewer inspect the now-complete relationship. Do not rush
 past the final causal connection just because the pen has finished drawing it.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 1s (marker travel is continuous; a drawing hand, if shown, moves on 2s)
+- enter / exit: 18–30 f / 8–12 f
+- ease: cubic-bezier(0.45, 0, 0.55, 1) (in) / cubic-bezier(0.4, 0, 1, 1) (out)
+- overshoot: none   squash-stretch: none
+- reading hold: ≥ 1.0 s   end hold: ≥ 1.5 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Draw-on stroke.** Animate `stroke-dashoffset` from the path length to 0 at 900–1400 px per second (a 300 px arrow takes 7–10 frames); split the path at corners and ease each segment, so the marker slows by about 30% into a corner.
+- **Marker weights.** 5–6 px for structure, 3 px for annotation, one accent colour reserved for the relation that just changed.
+- **Earlier marks stay.** Finished strokes stay at full opacity; a correction is a 3 px strike-through drawn over the old mark, never a fade.
+- **Erase only for a real change.** An eraser pass takes 8–12 frames along the stroke direction and leaves a 6–10% grey ghost of the old mark.
+
 ## Sound
 
 Optional short pen or chalk accents can signal construction. Use them sparingly;

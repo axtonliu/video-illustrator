@@ -41,6 +41,25 @@ interaction, followed by a wider scene showing its effect. Use changes of depth
 sparingly when the flattened composition is doing the explanatory work.
 A deliberate pose cadence can add impact, but random frame jitter weakens the print.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: 12 fps stepped
+- enter / exit: 12–18 f / 8–12 f
+- ease: cubic-bezier(0.7, 0, 0.3, 1) (in) / cubic-bezier(0.8, 0, 1, 1) (out)
+- overshoot: none   squash-stretch: none
+- reading hold: ≥ 0.9 s   end hold: ≥ 1.6 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Gouge marks.** Negative wedges 3–8 px wide tapering to a point, following the form; cached per object so they travel with it.
+- **Two values only.** Ink and paper; tone comes from how much is carved away (0–60% of an area), never from gradients.
+- **Pressed ink edge.** 1–2 px of seeded roughness on every ink edge and 5–10% missing-ink speckle, anchored to the object.
+- **Carving reveal.** Marks appear in carving order, 3–6 marks per 12 fps step.
+
 ## Optional sound
 
 Available or produced impacts, mechanical contacts, or restrained environmental sound

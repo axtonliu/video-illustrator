@@ -4,20 +4,22 @@
 
 One narration, six looks. All samples use the same 20.86-second Chinese narration from
 the author's book *重构个体* (recorded in the author's own voice) and the real book cover.
-The README grid shows samples 7 and 8 (Skill 0.4) and 1–4 (earlier versions), all made by
-this Skill from a one-sentence request. Sample 5 is the earlier cinematic sample that 8
-replaced on the grid. Sample 6 is a reference made outside this Skill.
+The README grid shows samples 7 and 8 (Skill 0.4) and 1–4 (Skill 0.5), all made by this
+Skill from a one-sentence request in a single pass with no revision. Sections 1–4 also keep the
+record of the earlier version of each style, which is still online. Sample 5 is the earlier
+cinematic sample that 8 replaced on the grid. Sample 6 is a reference made outside this Skill.
 
 同一段口播，六种画面。所有样片都用作者本人录制的同一段 20.86 秒《重构个体》口播和真实书封。
-README 网格展示第 7、8 条（Skill 0.4）和第 1–4 条（更早版本），都由本 Skill 根据一句话输入生成；
-第 5 条是被第 8 条替换下来的旧版电影感样片；第 6 条是作者用内部产线制作的已发布版，**不是本 Skill 生成的**，只作参照。
+README 网格展示第 7、8 条（Skill 0.4）和第 1–4 条（Skill 0.5），都由本 Skill 根据一句话输入一次跑完、0 次修改；
+第 1–4 节末尾保留了该风格上一版的记录，上一版视频仍可观看；第 5 条是被第 8 条替换下来的旧版电影感样片；第 6 条是作者用内部产线制作的已发布版，**不是本 Skill 生成的**，只作参照。
 
 ## How to read the numbers / 数字口径
 
 - **Host / 宿主**: Claude Code, model `claude-opus-5-5`, effort `high`, run non-interactively
   (`claude -p`) in the author's environment on macOS (Apple M4 Pro). Each film shown is the
-  delivery of one session plus the revisions listed; samples 1–4 were the only run of their style
-  with this narration, sample 5 was the fourth cinematic attempt (see its notes).
+  delivery of one session plus the revisions listed. The earlier versions of samples 1–4 were the
+  only run of their style with this narration on Skill 0.1.1; the v0.5 cut-paper film follows one
+  0.5 run that was not adopted, and sample 5 was the fourth cinematic attempt (see their notes).
 - **Time / 耗时**: wall-clock time of the agent session as reported in its result event,
   including planning, rendering and self-checks.
 - **Cost / 成本**: the `total_cost_usd` Claude Code reports at **API list price**
@@ -27,9 +29,45 @@ README 网格展示第 7、8 条（Skill 0.4）和第 1–4 条（更早版本�
 - **Revisions / 修改次数**: follow-up requests from the author after the first delivery, made
   in the same session (resumed). The revision cost below is the increment on top of the first
   delivery.
+- **Review rounds / 审片轮次** (Skill 0.5 only): rounds of the Skill's own independent review
+  inside the single run. A reviewer with a clean context judges the film's evidence against
+  `references/aesthetic-rules.md`; the run fixes what is marked ✗. A second round is allowed only
+  for AR-01 (would a stranger stop), AR-02 (pictures and scale) and AR-06 (leave the desk), and
+  there is no third round (`references/review.md`). These are not author revisions.
 - Output of every sample: 1920×1080, 30 fps, H.264 + AAC, subtitles burned in.
 
-## 1 · Cut paper / 剪纸拼贴
+## 1 · Cut paper / 剪纸拼贴 (v0.5)
+
+[Watch on YouTube](https://youtu.be/RspPmhD8SuY) · [Play directly](https://img.axtonliu.com/video-illustrator/samples/1-cut-paper-v05.mp4)
+
+- **Input (verbatim)**:
+  > 用 video-illustrator 给我的新书《重构个体》做一段剪纸拼贴风格（纸张质感、层叠、手作感，温暖）的宣传短片，1920×1080，带中文字幕。素材都在 inputs/ 里：旁白录音和逐字时间在 inputs/voice/，书封在 inputs/assets/，品牌信息在 inputs/brand/。配乐用 inputs/music/ 里的文件，不要生成。不要编造书里没有的内容。运行说明：Bash 每次只执行一条简单命令，不要用分号、&& 或管道串联多条；某条命令被拒时，拆成更简单的命令或换用 Read/Glob 再试，不要因此停下。
+
+  `inputs/brand/brand.json`: `{"display_name": "Axton", "making_of": "一句话生成 · 每一帧都是代码渲染"}`.
+  `inputs/music/music.wav` is the music of this style's earlier version (its Lyria generation id
+  is in the earlier-version notes below). The last sentence of the request is an operating note
+  for the non-interactive runner's narrow command allowlist, not creative direction.
+- **Skill version**: 0.5.0 (commit `fe9c9b9`, which adds the second review round for AR-01,
+  AR-02 and AR-06), 2D route (Canvas).
+- **Time**: 52.8 min.
+- **Cost (API list price)**: **US$13.08**. No Lyria call; the music was supplied.
+- **Revisions**: 0. An earlier pass in the same style on Skill 0.5.0 at commit `3aa99e4`, which
+  allowed only one review fix round (48.4 min, US$9.94 at API list price), was not adopted; it
+  led to the second-round rule in `fe9c9b9`.
+- **Length**: 26.0 s.
+- **Device**: one gold line. The opening paper tears along the crack in the cover and shows
+  molten gold; the crack becomes a golden road, a bookmark ribbon and the reader's handwriting, and at
+  「写脏」 the book's pages burst into scribbles and paper scraps.
+- **Music**: the earlier version's Google Lyria 3 clip, reused from `inputs/music/` as the request
+  asked; no new music was generated.
+- **Review rounds**: two. In round 2 AR-06 passed and AR-01 and AR-02 were still ✗; the run
+  fixed them once more without a further review.
+
+### Earlier version / 上一版
+
+The earlier film is still online: [Watch on YouTube](https://youtu.be/nY3bh-UEwyQ) · [Watch on Bilibili](https://www.bilibili.com/video/BV1mwaV6cE31/?p=1).
+It was first delivered with Skill 0.1.1 and revised twice. The record below is unchanged, except
+that references to sample 1 now point to sample 1's earlier version.
 
 Text in 〔 〕 was redacted for publication: a local folder path and the author's legal name.
 Everything else is the request exactly as sent.
@@ -61,12 +99,41 @@ Everything else is the request exactly as sent.
   limiter (no sidechain, no dynamic loudnorm). Picture frames are unchanged (verified
   by video-stream md5) and no model was called for this pass.
 
-## 2 · Ink wash / 水墨
+## 2 · Ink wash / 水墨 (v0.5)
 
-- **Input (verbatim)**: same as sample 1 with the style phrase
+[Watch on YouTube](https://youtu.be/o4fDdmcybLc) · [Play directly](https://img.axtonliu.com/video-illustrator/samples/2-ink-wash-v05.mp4)
+
+- **Input (verbatim)**:
+  > 用 video-illustrator 给我的新书《重构个体》做一段中国水墨风格（笔触、墨色晕染、留白）的宣传短片，1920×1080，带中文字幕。素材都在 inputs/ 里：旁白录音和逐字时间在 inputs/voice/，书封在 inputs/assets/，品牌信息在 inputs/brand/。配乐用 inputs/music/ 里的文件，不要生成。不要编造书里没有的内容。运行说明：Bash 每次只执行一条简单命令，不要用分号、&& 或管道串联多条；某条命令被拒时，拆成更简单的命令或换用 Read/Glob 再试，不要因此停下。
+
+  `inputs/brand/brand.json`: `{"display_name": "Axton", "making_of": "一句话生成 · 每一帧都是代码渲染"}`.
+  `inputs/music/music.wav` is the music of this style's earlier version (its Lyria generation id
+  is in the earlier-version notes below). The last sentence of the request is an operating note
+  for the non-interactive runner's narrow command allowlist, not creative direction.
+- **Skill version**: 0.5.0 (commit `fe9c9b9`, which adds the second review round for AR-01,
+  AR-02 and AR-06), 2D route (Canvas).
+- **Time**: 70.3 min.
+- **Cost (API list price)**: **US$20.30**. No Lyria call; the music was supplied.
+- **Revisions**: 0.
+- **Length**: 23.8 s.
+- **Device**: one rectangle, pushed in from a gateway to the book on a desk to the printed
+  frame of a page. In the first half the ink never leaves the frame; at 「请把它写脏」 one vermilion stroke
+  breaks out of it and becomes a red road through the landscape, back to the gate.
+- **Music**: the earlier version's Google Lyria 3 clip, reused from `inputs/music/` as the request
+  asked; no new music was generated.
+- **Review rounds**: two. In round 2 only AR-01 was still ✗; the run fixed it once more
+  without a further review.
+
+### Earlier version / 上一版
+
+The earlier film is still online: [Watch on YouTube](https://youtu.be/rR1Gh8s7aDE) · [Watch on Bilibili](https://www.bilibili.com/video/BV1mwaV6cE31/?p=2).
+It was first delivered with Skill 0.1.1 and revised twice. The record below is unchanged, except
+that references to sample 1 now point to sample 1's earlier version.
+
+- **Input (verbatim)**: same as the earlier version of sample 1 with the style phrase
   > 中国水墨风格（笔触、墨色晕染、留白）
-- **Revision 1**: same text as sample 1.
-- **Revision 2**: same text as sample 1's revision 2.
+- **Revision 1**: same text as in the earlier version of sample 1.
+- **Revision 2**: same text as revision 2 in the earlier version of sample 1.
 - **Skill version**: first delivery and revision 1 on 0.1.1 (commit `8408eb9`); revision 2
   resumed the same session and used the Skill's then-current music workflow (0.3.2,
   `scripts/music.mjs` + `scripts/beats.mjs`).
@@ -88,12 +155,39 @@ Everything else is the request exactly as sent.
   limiter (no sidechain, no dynamic loudnorm). Picture frames are unchanged (verified
   by video-stream md5) and no model was called for this pass.
 
-## 3 · Pixel retro / 像素复古
+## 3 · Pixel retro / 像素复古 (v0.5)
 
-- **Input (verbatim)**: same as sample 1 with the style phrase
+[Watch on YouTube](https://youtu.be/onpxVv_pBMo) · [Play directly](https://img.axtonliu.com/video-illustrator/samples/3-pixel-retro-v05.mp4)
+
+- **Input (verbatim)**:
+  > 用 video-illustrator 给我的新书《重构个体》做一段像素复古游戏风格（8-bit 像素画面，游戏化的关卡感）的宣传短片，1920×1080，带中文字幕。素材都在 inputs/ 里：旁白录音和逐字时间在 inputs/voice/，书封在 inputs/assets/，品牌信息在 inputs/brand/。配乐用 inputs/music/ 里的文件，不要生成。不要编造书里没有的内容。运行说明：Bash 每次只执行一条简单命令，不要用分号、&& 或管道串联多条；某条命令被拒时，拆成更简单的命令或换用 Read/Glob 再试，不要因此停下。
+
+  `inputs/brand/brand.json`: `{"display_name": "Axton", "making_of": "一句话生成 · 每一帧都是代码渲染"}`.
+  `inputs/music/music.wav` is the music of this style's earlier version (its Lyria generation id
+  is in the earlier-version notes below). The last sentence of the request is an operating note
+  for the non-interactive runner's narrow command allowlist, not creative direction.
+- **Skill version**: 0.5.0 (commit `fe9c9b9`, which adds the second review round for AR-01,
+  AR-02 and AR-06), 2D route (Canvas).
+- **Time**: 33.3 min.
+- **Cost (API list price)**: **US$10.02**. No Lyria call; the music was supplied.
+- **Revisions**: 0.
+- **Length**: 29.5 s (the music runs 30 s; the film keeps the track's own ending).
+- **Device**: a two-player game. The item box 「作者：？？？」 becomes Axton with 「获得道具！」,
+  and the HUD switches from 1P to 「2P · 你」.
+- **Music**: the earlier version's Google Lyria 3 clip, reused from `inputs/music/` as the request
+  asked; no new music was generated.
+- **Review rounds**: one; AR-01, AR-02 and AR-06 all passed the first time.
+
+### Earlier version / 上一版
+
+The earlier film is still online: [Watch on YouTube](https://youtu.be/rnREYCpvWeg) · [Watch on Bilibili](https://www.bilibili.com/video/BV1mwaV6cE31/?p=3).
+It was first delivered with Skill 0.1.1 and revised twice. The record below is unchanged, except
+that references to sample 1 now point to sample 1's earlier version.
+
+- **Input (verbatim)**: same as the earlier version of sample 1 with the style phrase
   > 像素复古游戏风格（8-bit 像素画面，游戏化的关卡感）
-- **Revision 1**: same text as sample 1.
-- **Revision 2**: same text as sample 1's revision 2.
+- **Revision 1**: same text as in the earlier version of sample 1.
+- **Revision 2**: same text as revision 2 in the earlier version of sample 1.
 - **Skill version**: first delivery and revision 1 on 0.1.1 (commit `8408eb9`); revision 2
   resumed the same session and used the Skill's then-current music workflow (0.3.2,
   `scripts/music.mjs` + `scripts/beats.mjs`).
@@ -115,14 +209,42 @@ Everything else is the request exactly as sent.
   limiter (no sidechain, no dynamic loudnorm). Picture frames are unchanged (verified
   by video-stream md5) and no model was called for this pass.
 
-## 4 · Particles / 粒子光轨
+## 4 · Particles / 粒子光轨 (v0.5)
 
-- **Input (verbatim)**: same as sample 1 with the style phrase
-  > 粒子与生成艺术风格（粒子和光线轨迹聚散成形，流动、有科技感）
+[Watch on YouTube](https://youtu.be/HjPDtsuzjF4) · [Play directly](https://img.axtonliu.com/video-illustrator/samples/4-particles-v05.mp4)
+
+- **Input (verbatim)**:
+  > 用 video-illustrator 给我的新书《重构个体》做一段粒子与生成艺术风格（粒子和光线轨迹聚散成形，流动、有科技感）的宣传短片，1920×1080，带中文字幕。素材都在 inputs/ 里：旁白录音和逐字时间在 inputs/voice/，书封在 inputs/assets/，品牌信息在 inputs/brand/。配乐用 inputs/music/ 里的文件，不要生成。不要编造书里没有的内容。运行说明：Bash 每次只执行一条简单命令，不要用分号、&& 或管道串联多条；某条命令被拒时，拆成更简单的命令或换用 Read/Glob 再试，不要因此停下。
 
   This is a custom style description; it has no entry in the [style atlas](../references/styles.md).
-- **Revision 1**: same text as sample 1.
-- **Revision 2**: same text as sample 1's revision 2.
+
+  `inputs/brand/brand.json`: `{"display_name": "Axton", "making_of": "一句话生成 · 每一帧都是代码渲染"}`.
+  `inputs/music/music.wav` is the music of this style's earlier version (its Lyria generation id
+  is in the earlier-version notes below). The last sentence of the request is an operating note
+  for the non-interactive runner's narrow command allowlist, not creative direction.
+- **Skill version**: 0.5.0 (commit `fe9c9b9`, which adds the second review round for AR-01,
+  AR-02 and AR-06), particles rendered with three.js.
+- **Time**: 45.5 min.
+- **Cost (API list price)**: **US$12.63**. No Lyria call; the music was supplied.
+- **Revisions**: 0.
+- **Length**: 25.5 s.
+- **Device**: a 「执笔」 (pen) label that changes from —— to Axton to 你, while the light pen turns
+  from cold white to amber.
+- **Music**: the earlier version's Google Lyria 3 clip, reused from `inputs/music/` as the request
+  asked; no new music was generated.
+- **Review rounds**: two. In round 2 only the book shape at 4–6 s did not pass; the run fixed it
+  once more without a further review.
+
+### Earlier version / 上一版
+
+The earlier film is still online: [Watch on YouTube](https://youtu.be/Eez9PNYggu8) · [Watch on Bilibili](https://www.bilibili.com/video/BV1mwaV6cE31/?p=4).
+It was first delivered with Skill 0.1.1 and revised twice. The record below is unchanged, except
+that references to sample 1 now point to sample 1's earlier version.
+
+- **Input (verbatim)**: same as the earlier version of sample 1 with the style phrase
+  > 粒子与生成艺术风格（粒子和光线轨迹聚散成形，流动、有科技感）
+- **Revision 1**: same text as in the earlier version of sample 1.
+- **Revision 2**: same text as revision 2 in the earlier version of sample 1.
 - **Skill version**: first delivery and revision 1 on 0.1.1 (commit `8408eb9`); revision 2
   resumed the same session and used the Skill's then-current music workflow (0.3.2,
   `scripts/music.mjs` + `scripts/beats.mjs`).
@@ -254,9 +376,10 @@ the five above, not because the runs failed.
   used unchanged (the Skill only scales, moves, lights and crops it). It carries the
   publisher's marks.
 - **Music**: all Skill-made samples (1–5, 7, 8) use a track generated with
-  Google Lyria 3 through the author's own OpenRouter account. Earlier versions of samples
-  1–4 used tracks from the author's Artlist subscription, replaced by revision 2 in each
-  (see each sample's notes); Artlist music is no longer used in any homepage sample. No
+  Google Lyria 3 through the author's own OpenRouter account. The v0.5 versions of samples 1–4
+  reuse the Lyria tracks of their earlier versions. Before revision 2, those earlier versions
+  used tracks from the author's Artlist subscription (see each sample's earlier-version notes);
+  Artlist music is no longer used in any homepage sample. No
   audio file is distributed with this package.
 - **License scope**: the MIT license of this repository covers the code and documentation.
   The sample films, preview animations and posters in `showcase/` contain the author's voice,

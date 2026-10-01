@@ -48,6 +48,25 @@ A tabletop camera makes material relationships easy to read. A modest parallax m
 can reveal layers. Avoid continuous floating zooms that make attached objects appear
 weightless. Preserve a subject's identifying shape through framing changes.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 2s, or 12 fps stepped for a stop-motion feel
+- enter / exit: 10–14 f / 8–10 f
+- ease: cubic-bezier(0.3, 1.15, 0.45, 1.06) (in) / cubic-bezier(0.6, 0, 0.9, 0.5) (out)
+- overshoot: ≤ 4%   squash-stretch: ≤ 4% (paper bends at its folds rather than stretching)
+- reading hold: ≥ 0.8 s   end hold: ≥ 1.5 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Cut or torn edge.** Contour jitter of 1.5–3 px at 1280, seeded per piece and fixed for the piece's life; a torn edge adds a 2–4 px lighter fibre rim.
+- **Grain anchored to the piece.** Fibre grain 2–4 px in scale at 4–8% contrast, with texture coordinates in the piece's own space so it moves and rotates with the piece, never fixed to the screen.
+- **Lift shadow.** At rest: 2 px offset, 3 px blur, 30% opacity. Lifted: up to 8 px offset, 12 px blur, 20% opacity, changing with the lift.
+- **Stop-motion option.** Poses held on 12 fps steps, each new pose with a seeded ±0.5° rotation; nothing changes between steps.
+
 ## Sound
 
 Optional dry taps, folds, or rustles can support contact and material behavior. Use

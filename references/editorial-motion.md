@@ -44,6 +44,25 @@ A fixed camera often works best. A crop or push can isolate the decisive detail;
 return to the larger relationship when the comparison needs it. A match cut may
 carry an outline or word into a new context without requiring literal morphing.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 1s
+- enter / exit: 10–14 f / 6–9 f
+- ease: cubic-bezier(0.2, 1, 0.3, 1.06) (in) / cubic-bezier(0.7, 0, 0.84, 0) (out)
+- overshoot: ≤ 2%   squash-stretch: none
+- reading hold: ≥ 0.6 s plus the line-length reading time in cinematic.md   end hold: ≥ 1.2 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Masked line reveal.** Each line slides up 100% of its own height behind a mask in 10–14 frames; lines stagger 3 frames, and a word that must land on its onset does not stagger.
+- **Grid.** 12 columns with 64 px outer margins at 1280; every type block sits on an 8 px baseline.
+- **Tracking snap.** A key word enters at +0.2 em tracking and closes to 0 over 12 frames.
+- **Rules draw first.** 2 px hairlines cross the grid in 16–20 frames with `stroke-dashoffset` and arrive before the text they separate.
+
 ## Sound
 
 If audio is desired, sparse clicks, ticks, and restrained tonal changes can support

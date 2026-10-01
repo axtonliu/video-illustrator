@@ -25,7 +25,44 @@ chalk on slate). Start from that. Colors in the user's real assets may be echoed
 accent or a transition bridge, but do not let every style inherit the asset's dominant
 colors: a black-and-gold book cover should not turn eight styles into eight black-and-gold
 films. When `inputs/brand/brand.json` supplies a `palette`, use it for the film's own
-typography, credits and end card, and still let the style govern the world.
+typography, credits and end card, and still let the style govern the world. A v2 brand pack
+with `palette_scope: "film"` is the exception: its palette colours the whole film while the style
+keeps its materials, motion and craft ([brand.md](brand.md#precedence)).
+
+## Motion tokens
+
+Every style file ends its motion guidance with a `## Motion tokens` block: the style's motion
+voice as numbers (30 fps). They are starting values, chosen so that styles really differ
+(a halftone panel snaps in 4–8 frames with a 12% overshoot; a stained-glass pane fills with
+light over 30–48 frames and never overshoots). Change them for a reason and say so in
+`brief.md`; do not replace them with one house ease for every style.
+
+| Field | Meaning | In code |
+|---|---|---|
+| `cadence` | How often a new drawing appears: on 1s (every frame), on 2s (15 per second), on 3s (10 per second), or N fps stepped | Quantise time for drawn poses: `step(t, 15)`; camera and whole-object travel may stay on 1s where the file says so |
+| `enter / exit` | Duration of an element's entrance and exit, in frames | `enter: [10, 14]`; pick within the range by importance (the hero takes the long end) |
+| `ease` | Entrance and exit curves | `cubicBezier(...)` below; a curve whose y values pass 1 overshoots by exactly that much |
+| `overshoot` | Largest allowed pass beyond the target, as a share of the move; `none` = never passes it | Must agree with the entrance curve: `none` curves stay at or below 1 |
+| `squash-stretch` | Largest deformation on contact or speed; keep volume (`scaleX = 1 / scaleY`) | Apply only on contact frames and the fastest frames of a move |
+| `reading hold` | Minimum stillness after something that must be read lands | Add the line-length reading time from [cinematic.md](cinematic.md#pace-cut-more-dwell-less) on top |
+| `end hold` | Minimum settled time for the last picture before the film ends | `scripts/contact.mjs` measures it as `end_hold_s` and warns under 1.0 s |
+
+```js
+// Timeline tokens copied from the style file (cut-paper here).
+const MOTION = { cadence: 15, enter: [10, 14], exit: [8, 10], easeIn: [0.3, 1.15, 0.45, 1.06],
+  easeOut: [0.6, 0, 0.9, 0.5], overshoot: 0.04, squash: 0.04, readingHold: 0.8, endHold: 1.5 };
+const step = (t, fps) => (fps ? Math.floor(t * fps + 1e-6) / fps : t);   // on 2s at 30 fps: 15; 12 fps stepped: 12
+function cubicBezier(x1, y1, x2, y2) {                                    // CSS cubic-bezier, x1 and x2 in [0, 1]
+  const f = (a, b, u) => 3 * a * (1 - u) ** 2 * u + 3 * b * (1 - u) * u * u + u ** 3;
+  return x => { let lo = 0, hi = 1; for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (f(x1, x2, m) < x) lo = m; else hi = m; } return f(y1, y2, (lo + hi) / 2); };
+}
+const enter = cubicBezier(...MOTION.easeIn);
+// progress of an entrance that starts at t0 and lasts 12 frames, drawn on 2s:
+const p = enter(Math.min(1, Math.max(0, (step(t, MOTION.cadence) - t0) / (12 / 30))));
+```
+
+One set of tokens governs entrances, exits, transitions and holds for the whole film; mixing
+two styles' tokens reads as a collage of two films.
 
 ## Drawing & painting / 绘画
 

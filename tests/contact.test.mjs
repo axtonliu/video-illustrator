@@ -6,7 +6,7 @@ import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { sampleTimes, dhashBits, bitsToHex, hamming, distinctScenes, bestMatch } from '../scripts/contact.mjs';
+import { sampleTimes, dhashBits, bitsToHex, hamming, distinctScenes, bestMatch, motionStats, motionWarnings, MOTION_DEFAULTS } from '../scripts/contact.mjs';
 
 const exec = promisify(execFile);
 const script = fileURLToPath(new URL('../scripts/contact.mjs', import.meta.url));
@@ -55,10 +55,15 @@ test('contact: two different pictures plus a pan count as two scenes; asset esti
   assert.deepEqual(result.frames.map(f => f.assets['cover asset.png'].present), [false, false, true, true, false, false]);
   const box = result.frames[2].assets['cover asset.png'].box;             // true box: 420/640, 110/360, 96/640, 136/360
   assert.ok(Math.abs(box[0] - 420 / 640) < 0.03 && Math.abs(box[1] - 110 / 360) < 0.03, `box ${box}`);
-  // Two scenes against a four-scene list is a warning, not a failure.
-  assert.equal(result.warnings.length, 1);
+  // Two scenes against a four-scene list is a warning, not a failure. The two 4 s held pictures
+  // and the pan that runs to the last frame add the two motion warnings.
+  assert.equal(result.warnings.length, 3);
   assert.match(result.warnings[0], /below 70% of the scene list \(4\)/);
   assert.match(stderr, /warning: distinct_scenes 2/);
+  assert.ok(Math.abs(result.motion.longest_still_s - 4) <= 0.25, `longest still ${result.motion.longest_still_s}`);
+  assert.equal(result.motion.end_hold_s, 0);
+  assert.match(result.warnings[1], /longest_still_s .* is over 3 s/);
+  assert.match(result.warnings[2], /end_hold_s 0 is under 1 s/);
   assert.ok((await stat(path.join(out, 'contact.png'))).size > 1000);
   const probe = JSON.parse((await exec('ffprobe', ['-v', 'error', '-show_streams', '-of', 'json', path.join(out, 'contact.png')])).stdout);
   assert.deepEqual([probe.streams[0].width, probe.streams[0].height], [5 * 320 + 6 * 4, 2 * 180 + 3 * 4]);
@@ -90,4 +95,64 @@ test('contact: bar sampling from beats.json, dHash and matching helpers', () => 
   assert.deepEqual([m.x, m.y], [20, 12]);
   assert.ok(m.score > 0.999);
   assert.equal(bestMatch(frame, 40, 30, new Uint8Array(48).fill(9), 8, 6), null);
+});
+
+// 10 s at 10 fps, grey stripes whose phase drives motion:
+//   0-2 s moving (bright) | 2-6 s frozen (bright) | 6-9.5 s moving (dark, mean grey about 20) | 9.5-10 s frozen (bright)
+// Expected at 4 samples/s: longest still 4.0 s, end hold 0.5 s, dark 14 of 40 samples = 0.35.
+async function motionClip(directory) {
+  const clip = path.join(directory, 'motion.mp4');
+  const phase = "if(lt(T\\,2)\\,T\\,if(lt(T\\,6)\\,2\\,if(lt(T\\,9.5)\\,T-4\\,5.5)))";
+  const dark = "(gte(T\\,6)*lt(T\\,9.5))";
+  const lum = `if(${dark}\\,20+12*sin(X/12+4*${phase})\\,128+70*sin(X/12+4*${phase}))`;
+  await exec('ffmpeg', ['-loglevel', 'error', '-f', 'lavfi', '-i', `nullsrc=s=320x180:r=10:d=10,format=yuv420p,geq=lum='${lum}':cb=128:cr=128`,
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', clip]);
+  return clip;
+}
+
+test('contact motion: still stretch, end hold and dark share measured on a generated clip; warnings only', async t => {
+  const directory = await tempdir(t);
+  const clip = await motionClip(directory);
+  const out = path.join(directory, 'qa');
+  const { stdout, stderr } = await exec(process.execPath, [script, '--input', clip, '--output-dir', out]);
+  const { motion, warnings } = JSON.parse(await readFile(path.join(out, 'contact.json'), 'utf8'));
+  assert.equal(motion.samples, 40);
+  assert.ok(Math.abs(motion.longest_still_s - 4) <= 0.25, `longest still ${motion.longest_still_s}`);
+  assert.ok(Math.abs(motion.longest_still_range_s[0] - 2) <= 0.25 && Math.abs(motion.longest_still_range_s[1] - 6) <= 0.25, `range ${motion.longest_still_range_s}`);
+  assert.ok(Math.abs(motion.end_hold_s - 0.5) <= 0.25, `end hold ${motion.end_hold_s}`);
+  assert.ok(Math.abs(motion.dark_ratio - 0.35) <= 0.03, `dark ratio ${motion.dark_ratio}`);
+  assert.equal(motion.still_threshold, MOTION_DEFAULTS.stillThreshold);
+  assert.deepEqual(JSON.parse(stdout).motion, { longest_still_s: motion.longest_still_s, end_hold_s: motion.end_hold_s, dark_ratio: motion.dark_ratio });
+  // Defaults: still > 3 s and end hold < 1 s warn; 0.35 dark does not. Exit code stays 0.
+  assert.equal(warnings.length, 2);
+  assert.match(warnings[0], /longest_still_s .* is over 3 s/);
+  assert.match(warnings[1], /end_hold_s .* is under 1 s/);
+  assert.match(stderr, /warning: end_hold_s/);
+  // Thresholds are parameters: a stricter dark limit adds the dark warning; looser limits clear the others.
+  const strict = JSON.parse((await exec(process.execPath, [script, '--input', clip, '--output-dir', path.join(directory, 'qa2'), '--dark-max', '0.3', '--still-max', '5', '--end-hold-min', '0.25'])).stdout);
+  assert.equal(strict.warnings.length, 1);
+  assert.match(strict.warnings[0], /dark_ratio 0\.3\d* is over 0\.3/);
+  const help = (await exec(process.execPath, [script, '--help'])).stdout;
+  for (const flag of ['--still-threshold 1.0', '--dark-threshold 40', '--still-max 3', '--end-hold-min 1.0', '--dark-max 0.5']) assert.ok(help.includes(flag), flag);
+});
+
+test('contact motion helpers: run lengths, a fade to black counts as holding, a clip that never moves', () => {
+  const frame = (v, len = 16) => new Uint8Array(len).fill(v);
+  const ramp = k => Uint8Array.from({ length: 16 }, (_, i) => (i * 13 + k * 40) % 200 + 30);
+  // moving, moving, still x5 (1.25 s), moving, held x4 (1.0 s at the end)
+  const frames = [ramp(0), ramp(1), ramp(2), ramp(2), ramp(2), ramp(2), ramp(2), ramp(3), ramp(4), ramp(4), ramp(4), ramp(4)];
+  const m = motionStats(frames);
+  assert.equal(m.longest_still_s, 1.25);
+  assert.deepEqual(m.longest_still_range_s, [0.5, 1.75]);
+  assert.equal(m.end_hold_s, 1);
+  assert.equal(m.end_hold_from_s, 2);
+  // Held picture, then a fade to black over the last three samples: the fade does not end the hold.
+  const held = ramp(5), faded = [0.6, 0.3, 0.02].map(g => held.map(v => Math.round(v * g)));
+  const fade = motionStats([ramp(0), ramp(1), held, held, held, held, ...faded]);
+  assert.equal(fade.end_hold_s, 1.75);
+  assert.equal(fade.longest_still_s, 0);
+  assert.equal(motionStats([frame(90), frame(90), frame(90), frame(90)]).longest_still_s, 1);   // never moves
+  assert.equal(motionStats([frame(10), frame(10), frame(200)]).dark_ratio, 0.667);
+  assert.deepEqual(motionWarnings({ longest_still_s: 3.25, longest_still_range_s: [1, 4.25], end_hold_s: 1, dark_ratio: 0.5, dark_threshold: 40 }).length, 1);
+  assert.deepEqual(motionWarnings({ longest_still_s: 3, longest_still_range_s: [1, 4], end_hold_s: 0.75, dark_ratio: 0.51, dark_threshold: 40 }).map(w => w.split(' ')[0]), ['end_hold_s', 'dark_ratio']);
 });

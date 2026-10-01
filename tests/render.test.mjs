@@ -165,3 +165,26 @@ test('default root is the working directory when the scene is inside it, so ../a
   // The filesystem root is never an implicit served root.
   assert.equal((await resolveRoot(await realpath(html), undefined, '/')).rootSource, 'scene');
 });
+
+// AAC starts with 1024 priming samples; the MP4 edit list hides them. Measured once to decide
+// whether render.mjs needs to compensate (0.5 design: only if the offset reaches one frame).
+test('AAC output keeps a click within one frame of the matching flash, with and without the edit list', async t => {
+  const { directory, html } = await fixture(t);
+  await writeFile(html, `<body style="margin:0;background:#000"><script>
+    window.renderFrame = async t => { document.body.style.background = t >= 0.9999 && t < 1.2 ? '#fff' : '#000'; };
+  </script>`);
+  const click = path.join(directory, 'click.wav'), output = path.join(directory, 'sync.mp4');
+  await exec('ffmpeg', ['-loglevel', 'error', '-f', 'lavfi', '-i', "aevalsrc='0.9*between(t\\,1.0\\,1.0005)':s=48000:d=2", click]);
+  await cli(['--input', html, '--output', output, '--duration', '2', '--width', '160', '--height', '90', '--audio', click]);
+  const onset = async (extra = []) => {
+    const { stdout } = await exec('ffmpeg', ['-v', 'error', ...extra, '-i', output, '-map', '0:a', '-f', 'f32le', '-ac', '1', '-ar', '48000', '-'], { encoding: 'buffer', maxBuffer: 16 << 20 });
+    const pcm = new Float32Array(stdout.buffer, stdout.byteOffset, stdout.length / 4);
+    return pcm.findIndex(v => Math.abs(v) > 0.1) / 48000;
+  };
+  const { stdout } = await exec('ffmpeg', ['-v', 'error', '-i', output, '-vf', 'scale=1:1,format=gray', '-f', 'rawvideo', '-'], { encoding: 'buffer' });
+  const flash = [...stdout].findIndex(v => v > 128) / 30;
+  assert.equal(flash, 1);
+  const honored = await onset(), raw = await onset(['-ignore_editlist', '1']);
+  assert.ok(Math.abs(honored - flash) < 0.002, `edit list honored: click at ${honored}`);
+  assert.ok(raw - flash > 0.015 && raw - flash < 1 / 30, `edit list ignored: click at ${raw} (priming delay under one frame)`);
+});

@@ -45,6 +45,24 @@ A deliberate side-on stage makes travel and encounters legible. Changes in appar
 distance from the light or screen when that geometry is established. Do not confuse a change in shadow size
 with a factual change in quantity.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 2s
+- enter / exit: 16–24 f / 12–18 f
+- ease: cubic-bezier(0.4, 1.08, 0.4, 1.02) (in) / cubic-bezier(0.55, 0, 0.85, 0.35) (out)
+- overshoot: ≤ 1%   squash-stretch: none (rigid leather; joints rotate instead)
+- reading hold: ≥ 1.0 s   end hold: ≥ 1.8 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Rivet joints.** Every limb rotates about a fixed rivet point, ±25–40°, with a 2–4 frame lag down the chain.
+- **Screen distance.** Pressed to the screen, a puppet's edge is sharp; pulled back, its edge blurs 2–6 px and it grows 3–8%.
+- **Lamp behind the screen.** Warm light falling off 10–15% from centre to corner; a 1–2% flicker at 4–8 Hz only when the scene has a flame.
+
 ## Sound
 
 Optional soft contact or restrained instrumental accents can support the performance.

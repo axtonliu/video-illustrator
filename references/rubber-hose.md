@@ -42,6 +42,25 @@ A stable stage makes deformation easy to follow. Track or cut when the subject m
 avoid constant camera wobble on top of elastic motion. Let the final pose reveal whether the effort worked and
 what it cost.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 2s
+- enter / exit: 8–12 f / 6–10 f
+- ease: cubic-bezier(0.3, 1.8, 0.5, 1) (in) / cubic-bezier(0.6, -0.4, 0.8, 0.2) (out)
+- overshoot: ≤ 18%   squash-stretch: ≤ 25%
+- reading hold: ≥ 0.6 s   end hold: ≥ 1.0 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Hose limbs.** Each limb is one quadratic curve from shoulder to hand at a constant 6–10 px width; bend follows the joint angle, no elbows.
+- **Beat bounce.** Idle characters bob 4–8 px on every beat, on 2s, landing on the beat.
+- **Volume-preserving squash.** scaleX = 1 / scaleY; stretch to 1.25 on fast moves and squash to 0.8 on landing for 2–4 frames.
+- **Pie-cut eyes.** Blink for 3 frames every 2–4 seconds; a double take is two blinks 6 frames apart.
+
 ## Sound
 
 Optional squeaks, soft impacts, or rhythmic accents can underline tension and release. Keep the visual action

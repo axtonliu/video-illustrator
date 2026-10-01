@@ -31,6 +31,24 @@ attachment constrains how a part moves. Avoid applying the same spring to everyt
 A steady tabletop view often gives these actions room; a cut can reveal a useful
 new scale without wobbling the camera throughout the explanation.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: 12 fps stepped (each pose held 2–4 steps)
+- enter / exit: 12–20 f / 10–14 f
+- ease: cubic-bezier(0.35, 1.1, 0.4, 1.03) (in) / cubic-bezier(0.55, 0, 0.85, 0.3) (out)
+- overshoot: ≤ 2%   squash-stretch: ≤ 15% (volume preserved)
+- reading hold: ≥ 0.8 s   end hold: ≥ 1.5 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Contact squash.** On landing, 10–15% squash with volume kept (scaleX = 1 / scaleY) for 2 steps, one step of 5% stretch, then rest.
+- **Sculpted poses on 12 fps.** Every step is a new pose with a seeded ±0.5 px surface shift (the thumbprint boil); during a hold the surface does not move.
+- **Fingerprints.** 3–6 shallow dents per object, lit by the fixed key light, anchored to the object.
+
 ## Sound and implementation
 
 Optional soft contacts or material sounds support the performance when available.

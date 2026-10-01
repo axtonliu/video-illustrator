@@ -187,10 +187,27 @@ For a promo or cinematic piece, sound comes before picture:
 5. **Timeline.** Copy the beat times and the snapped cue starts from `words.onsets.json`
    (shifted by where the narration starts in the film) into the scene's timeline object and
    derive animation times from it; decide where narration starts so its key words sit on beats.
-6. **Sound effects.** Generate starter effects and place one per visible action:
+6. **Sound effects.** Generate starter effects, or measure the user's own recordings from
+   `inputs/sfx/` (preferred when present), and place one per visible action:
    ```sh
    node scripts/sfx.mjs --out /path/to/project/audio/sfx
+   node scripts/sfx.mjs --measure /path/to/project/inputs/sfx/door-slam.wav --out /path/to/project/audio/sfx
+   node scripts/sfx.mjs --place whoosh.wav --at 1.741 --json /path/to/project/audio/sfx/sfx.json
    ```
+   **The peak goes on the beat, not the file start.** `sfx.json` records for every file the
+   time of its loudest sample (`peak_s`), read straight from the samples; user recordings get
+   `"type": "user"` and are not copied or changed. The effect's delay is
+   `adelay_ms = round((target_s − peak_s) × 1000)`. When that is negative (the target comes
+   before the effect could reach its peak), never set a negative delay: trim the head instead,
+   `atrim=start=<peak_s − target_s>,asetpts=PTS-STARTPTS` (without `asetpts` the trimmed audio
+   keeps its old timestamps and lands late again). `--place` prints the right filter for one
+   effect and target; with `--semitones` it pitches the effect and moves the peak with it.
+   The procedural whoosh peaks at 0.35 s of its 0.7 s, so delaying it by the beat time itself
+   (the 0.4 example) put its loudest moment about ten frames late.
+   The AAC track that `render.mjs` writes stays in sync: a click placed at 1.000 s decodes at
+   1.000 s with the MP4 edit list honored and at 1.021 s in a player that ignores it (the
+   encoder's 1024 priming samples), under one frame either way, so no compensation is applied
+   (measurement in [VALIDATION.md](../VALIDATION.md)).
 7. **Mix**, then render the picture with `--audio mix.wav`.
 
    **Music level stays constant under the narration.** Do not duck the music with a
@@ -206,8 +223,9 @@ For a promo or cinematic piece, sound comes before picture:
    ending fits. A clip that stops mid-phrase reads as broken.
 
    Example with narration starting at 0.5 s and ending at 18.0 s in a 20 s film, a fixed
-   music bed, a 1.5 s rise into the end card, two effects on beats, then static
-   normalization:
+   music bed, a 1.5 s rise into the end card, two effects whose peaks land on the beats at
+   1.741 s and 3.738 s (`sfx.json`: whoosh `peak_s` 0.35 → `adelay=1391`; impact `peak_s`
+   0.006 → `adelay=3732`), then static normalization:
    ```sh
    ffmpeg -hide_banner -loglevel error -n \
      -i voice.wav -i music.wav -i sfx/whoosh.wav -i sfx/impact.wav \
@@ -215,8 +233,8 @@ For a promo or cinematic piece, sound comes before picture:
    [0:a]aformat=sample_rates=48000:channel_layouts=stereo,adelay=500:all=1,apad=whole_dur=20[voice];\
    [1:a]aformat=sample_rates=48000:channel_layouts=stereo,atrim=0:20,\
    volume='0.22+0.28*clip((t-18.0)/1.5,0,1)':eval=frame[bed];\
-   [2:a]aformat=sample_rates=48000:channel_layouts=stereo,adelay=1741:all=1,volume=0.6[s1];\
-   [3:a]aformat=sample_rates=48000:channel_layouts=stereo,adelay=3738:all=1,volume=0.8[s2];\
+   [2:a]aformat=sample_rates=48000:channel_layouts=stereo,adelay=1391:all=1,volume=0.6[s1];\
+   [3:a]aformat=sample_rates=48000:channel_layouts=stereo,adelay=3732:all=1,volume=0.8[s2];\
    [voice][bed][s1][s2]amix=inputs=4:duration=first:normalize=0,aresample=48000[mix]" \
      -map "[mix]" -c:a pcm_s16le mix_raw.wav
    ```
@@ -229,7 +247,8 @@ For a promo or cinematic piece, sound comes before picture:
    all five homepage samples), which brings back the pumping. Check afterwards that the
    level change in a speech pause equals the static gain (a measured case: +3.4 dB in a
    pause, +3.3 dB during speech).
-   Replace the numbers with the film's actual narration end, duration and beat times.
+   Replace the numbers with the film's actual narration end, duration and beat times, and
+   each effect's filter with the one `--place` prints for it.
    `0.22` is a starting bed level (about 13 dB under the music's own level); check that
    the narration is clearly on top during the loudest music passage. Verify the result:
    `ffmpeg -i mix.wav -af ebur128=peak=true -f null -` for loudness, and listen (or state
@@ -264,10 +283,23 @@ node scripts/contact.mjs --input /path/to/project/preview.mp4 --output-dir /path
   share of samples at or above `--asset-threshold` (default 0.55). This is an estimate, marked
   `estimate: true`: it finds the asset upright and facing the camera; a 3D book at an angle,
   heavy relighting or a partial crop scores lower, so read it as a lower bound and check the sheet.
+- **Motion.** Separately from the sheet, the whole clip is read at 4 frames per second as
+  96-pixel-wide grey thumbnails, and each pair of neighbouring samples gets its mean absolute grey
+  difference. `contact.json` → `motion` holds `end_hold_s` (the final run in which the picture stays
+  settled; a uniform fade to black on a held picture still counts as held), `longest_still_s` (the
+  longest run before that final hold with differences under `--still-threshold`, default 1.0 of
+  255, with its time range) and `dark_ratio` (share of samples whose mean grey level is under
+  `--dark-threshold`, default 40). It catches “enters, then freezes” and “lands, then cuts
+  away”, which the scene count cannot see. A small element moving inside a large still picture
+  (under about 1% of the frame) counts as still; a camera drifting through one world for ten
+  seconds counts as motion, and only the scene count and the sheet reveal it. Do not add a
+  float or a breathing scale to a still object just to clear this number.
 - **Warnings.** `--scenes N` (the number of scene-list rows) warns when `distinct_scenes` is below
-  70% of N; any asset estimated in more than half the samples warns too. Warnings go to stderr
-  and `warnings[]`, and the exit code stays 0. Copy them with the numbers into `brief.md`.
-  They are proxy measures: evidence for review, never a gate.
+  70% of N; any asset estimated in more than half the samples warns too. Motion warns when
+  `longest_still_s` > 3 s (`--still-max`), `end_hold_s` < 1.0 s (`--end-hold-min`) or
+  `dark_ratio` > 0.5 (`--dark-max`; a film meant to be dark, such as a low-key 3D piece, says so in
+  `brief.md`). Warnings go to stderr and `warnings[]`, and the exit code stays 0. Copy them with
+  the numbers into `brief.md`. They are proxy measures: evidence for review, never a gate.
 
 Then look at the sheet. For each frame ask: would a stranger scrolling past stop here? Replace
 the weakest one or two pictures and render a new preview, at most two rounds. Do not overwrite an

@@ -40,6 +40,25 @@ match can advance the argument cleanly. Small changes in registration can punctu
 an event; ongoing jitter makes both typography and print texture feel unstable.
 Leave the composed image long enough to read after layers meet.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: 12 fps stepped (layers move on a quantised clock)
+- enter / exit: 8–12 f / 6–8 f
+- ease: cubic-bezier(0.34, 1.4, 0.64, 1) (in) / cubic-bezier(0.5, 0, 0.75, 0) (out)
+- overshoot: ≤ 6%   squash-stretch: ≤ 6%
+- reading hold: ≥ 0.7 s   end hold: ≥ 1.2 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Misregistration.** Each ink layer sits 1–3 px off register in a fixed direction per shot (seeded by the shot id). It may snap into register on a key moment; it never jitters per frame.
+- **Spot inks.** Two or three inks at 85–95% alpha with multiply overprint (for example fluorescent pink, medium blue, yellow); the overlaps are the extra colours.
+- **Layer grain.** Stochastic stipple at 15–30% density per layer, anchored to the layer, plus a 2–4% low-frequency density blotch.
+- **Halftone tones.** Cells of 8–10 px at 1280, a different screen angle per ink (15°, 45°, 75°).
+
 ## Optional sound
 
 If produced, a dry stamp, roller, or rhythmic contact can emphasize a layer arriving.

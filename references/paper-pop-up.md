@@ -30,6 +30,24 @@ Use camera angle to make the fold action readable. A gentle side view reveals de
 a frontal hold may be best for the concluding labels. Page turns are a possibility,
 not a compulsory transition between every statement. Keep orientation across turns.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: on 1s
+- enter / exit: 20–30 f / 14–20 f
+- ease: cubic-bezier(0.34, 1.35, 0.55, 1.05) (in) / cubic-bezier(0.65, 0, 0.35, 1) (out)
+- overshoot: ≤ 7%   squash-stretch: none
+- reading hold: ≥ 0.9 s   end hold: ≥ 1.6 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Hinge-driven planes.** Every plane rotates about its fold line, with its angle a function of the page angle (for example plane = 2 × page − 90°); no plane animates on its own.
+- **Fold shading.** A plane's brightness follows its angle to a fixed key light, between 60% and 100%; creases get a 1 px dark line.
+- **Page opening.** 20–30 frames for 180°, passing the open angle by 3–6%, then 6–8 frames to settle.
+
 ## Sound and implementation
 
 Optional creases or page contacts can emphasize real actions if audio is made.

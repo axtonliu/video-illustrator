@@ -52,6 +52,25 @@ in our own words, from:
   implementation here is our own, simpler version: a fixed or motion-scaled count with
   a pixel-per-sub-frame rule instead of that project's convergence test. No code was copied.
 
+### Ideas adapted in 0.5.0
+
+- [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) (Apache License 2.0)
+  informed several 0.5 additions, rewritten in our own words for this Skill's `renderFrame(t)`
+  renderer; no code or text was copied, and some starting values were re-derived or changed:
+  aesthetic rules written as a rule, a real review case and a self-check question, with a
+  clean-context review before delivery (`aesthetic-rules.md`, `review.md`); a transition
+  vocabulary with frame counts and the “one seam, one form” rule (`transitions.md`); motion
+  tokens (duration, entrance curve, overshoot, squash) that give a brand or style one motion
+  voice (the Motion tokens blocks); numeric limits on full-frame impacts and light effects and
+  “one technique leads once” (the restraint budget in `directing.md`); the riser → impact →
+  sparkle phrase and limits on machine-gun repeats (`cinematic.md`); and aligning an effect's
+  peak, not its file start, plus a measured AAC output offset (`sfx.mjs`, `rendering.md`).
+- [anything2explainer](https://github.com/Vincentwei1021/anything2explainer) (PolyForm
+  Noncommercial License 1.0.0): the general idea of measuring stillness and the final hold on
+  the rendered film, and of refusing to add float to a still object just to satisfy that
+  measure, informed the motion check in `contact.mjs`. Only the idea was used; no code, text or
+  other material from that project is included in this package.
+
 `scripts/beats.mjs`, `scripts/sfx.mjs` and `scripts/music.mjs` are independently written
 for this package. Spectral-flux onset detection, autocorrelation tempo estimation and
 dynamic-programming beat tracking are standard published techniques (for example

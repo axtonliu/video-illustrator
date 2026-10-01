@@ -45,6 +45,25 @@ Camera scrolling can reveal a route or a larger system. Coordinate its sampling 
 prevent crawling edges. A fixed view often explains throughput or competing paths more clearly than a
 continuously scrolling game scene.
 
+## Motion tokens
+
+Starting values for this style's motion voice, at 30 fps. Put them in the scene's timeline object and derive every entrance, exit and hold from them; how: [styles.md](styles.md#motion-tokens).
+
+- cadence: 12 fps stepped (sprites and camera snap to whole logical pixels)
+- enter / exit: 6–10 f / 4–6 f
+- ease: cubic-bezier(0.25, 0, 0.25, 1) (in) / cubic-bezier(0.5, 0, 1, 1) (out)
+- overshoot: none (use a pose change instead)   squash-stretch: none
+- reading hold: ≥ 0.8 s   end hold: ≥ 1.2 s
+
+## Signature craft
+
+Techniques that belong to this medium, with starting numbers (sizes at 1280×720; scale with the frame).
+
+- **Logical grid.** Draw at 320×180 for 1280×720 and scale 4× nearest-neighbour (`imageSmoothingEnabled = false`); round every position to a whole logical pixel on every frame, camera included.
+- **Palette.** At most 16 colours, with 2–3 value steps per hue and no anti-aliased edges.
+- **Ordered dither.** A 2×2 or 4×4 Bayer pattern anchored to world coordinates for gradients such as sky.
+- **Pose cycles.** A walk has 4–6 poses, each held 2–3 steps at 12 fps; a jump has three poses (crouch, air, land) with the landing held 3 steps.
+
 ## Sound
 
 Optional short synthesized tones can distinguish contact, receipt, or completion. They need not resemble a

@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- End card starting point for a brand pack. It lives in <pack>/templates/ and reads ../brand.json:
+     palette, fonts, display_name, making_of and motion. Render it on its own:
+       node scripts/render.mjs --input inputs/brand/templates/endcard.html --output end.png --still 6
+     or copy its markup and timeline into the film's scene. No colour is written here: every
+     colour comes from brand.json, so the same file works for any palette. -->
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: var(--brand-ground); }
+  body { color: var(--brand-ink); font-family: var(--brand-font-body); }
+  .card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; }
+  .name { font-family: var(--brand-font-display); font-size: calc(var(--title) * 100vh); font-weight: 600; letter-spacing: -0.01em; line-height: 1.05; }
+  .rule { height: max(2px, 0.4vh); background: var(--brand-accent); margin: 3vh auto 0; width: 0; }
+  .making { margin-top: 3vh; font-size: calc(var(--body) * 100vh); color: var(--brand-ink-secondary); }
+</style>
+</head>
+<body>
+<div class="card"><div class="name"></div><div class="rule"></div><div class="making"></div></div>
+<script>
+// Defaults apply when brand.json leaves a field out; they are neutral, not part of any brand.
+const DEFAULT_MOTION = { cadence: 'on 1s', enter: [12, 18], ease: { in: [0.25, 0.1, 0.25, 1] }, end_hold: 2 };
+const step = (t, fps) => (fps ? Math.floor(t * fps + 1e-6) / fps : t);
+function cubicBezier(x1, y1, x2, y2) {
+  const f = (a, b, u) => 3 * a * (1 - u) ** 2 * u + 3 * b * (1 - u) * u * u + u ** 3;
+  return x => { let lo = 0, hi = 1; for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (f(x1, x2, m) < x) lo = m; else hi = m; } return f(y1, y2, (lo + hi) / 2); };
+}
+const clamp = x => Math.min(1, Math.max(0, x));
+
+const ready = (async () => {
+  let brand = {};
+  try { brand = await (await fetch(new URL('../brand.json', location.href))).json(); } catch {}
+  const p = brand.palette || {};
+  const css = document.documentElement.style;
+  const set = (name, value) => value && css.setProperty(name, value);
+  set('--brand-ground', p.ground); set('--brand-ink', p.ink); set('--brand-accent', p.accent || p.primary);
+  set('--brand-ink-secondary', p.ink_secondary || p.ink);
+  const scale = brand.type_scale || {};
+  css.setProperty('--title', scale.title || 0.08);
+  css.setProperty('--body', scale.body || 0.035);
+  const fonts = brand.fonts || {};
+  for (const role of ['display', 'body', 'mono']) {
+    const font = fonts[role];
+    const stack = [];
+    if (font?.file) {
+      const face = new FontFace(`brand-${role}`, `url("${new URL('../' + font.file, location.href)}")`);
+      try { document.fonts.add(await face.load()); stack.push(`"brand-${role}"`); } catch {}
+    }
+    if (font?.family) stack.push(`"${font.family}"`);
+    css.setProperty(`--brand-font-${role}`, [...stack, 'system-ui', 'sans-serif'].join(','));
+  }
+  document.querySelector('.name').textContent = brand.display_name || '';
+  document.querySelector('.making').textContent = brand.making_of || '';
+  const motion = { ...DEFAULT_MOTION, ...(brand.motion || {}) };
+  const fps = { 'on 1s': 0, 'on 2s': 15, 'on 3s': 10 }[motion.cadence] ?? (parseInt(motion.cadence, 10) || 0);
+  const enterS = motion.enter[1] / 30;
+  const t = { name: 0.2, rule: 0.2 + enterS + 0.1 };
+  t.making = t.rule + enterS;
+  t.settled = t.making + motion.enter[0] / 30;
+  window.endcardTiming = { settled: t.settled, minimumLength: t.settled + (motion.end_hold || 2) };
+  return { ease: cubicBezier(...(motion.ease?.in || DEFAULT_MOTION.ease.in)), fps, enterS, t, motion };
+})();
+
+window.renderFrame = async time => {
+  const { ease, fps, enterS, t, motion } = await ready;
+  const now = step(time, fps);
+  const name = ease(clamp((now - t.name) / enterS));
+  const el = document.querySelector('.name');
+  el.style.opacity = name;
+  el.style.transform = `translateY(${(1 - name) * 2}vh)`;
+  // The accent line draws once under the name and stays: the end card's single accent.
+  document.querySelector('.rule').style.width = `${ease(clamp((now - t.rule) / enterS)) * el.offsetWidth}px`;
+  document.querySelector('.making').style.opacity = ease(clamp((now - t.making) / (motion.enter[0] / 30)));
+};
+</script>
+</body>
+</html>
