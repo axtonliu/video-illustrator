@@ -8,6 +8,8 @@ The README grid shows samples 7 and 8 (Skill 0.4) and 1–4 (Skill 0.5), all mad
 Skill from a one-sentence request in a single pass with no revision. Sections 1–4 also keep the
 record of the earlier version of each style, which is still online. Sample 5 is the earlier
 cinematic sample that 8 replaced on the grid. Sample 6 is a reference made outside this Skill.
+Sample 9 is separate from the narration set: one explainer mechanism (Tesla Roadster structure)
+in three styles, made with Skill 0.9.
 
 同一段口播，六种画面。所有样片都用作者本人录制的同一段 20.86 秒《重构个体》口播和真实书封。
 README 网格展示第 7、8 条（Skill 0.4）和第 1–4 条（Skill 0.5），都由本 Skill 根据一句话输入一次跑完、0 次修改；
@@ -352,6 +354,54 @@ that references to sample 1 now point to sample 1's earlier version.
   of the music bed before 「脏」 is a deliberate breath before the hit. Sound effects synthesized
   locally by `scripts/sfx.mjs`.
 - **Mix**: as delivered by the Skill run (−14.7 LUFS, −0.8 dBFS after encoding); no operator pass.
+
+## 9 · Roadster structure in three looks / Roadster 结构三种画面 (v0.9)
+
+Play directly (16:9, 1280×720): [diagram-3d](https://img.axtonliu.com/video-illustrator/samples/9-roadster-diagram-3d-v09.mp4) · [particles](https://img.axtonliu.com/video-illustrator/samples/9-roadster-particles-v09.mp4) · [cut-paper](https://img.axtonliu.com/video-illustrator/samples/9-roadster-cut-paper-v09.mp4) · [all three stacked](https://img.axtonliu.com/video-illustrator/samples/9-roadster-compare-v09.mp4) (1280×2160)
+
+- **What it is**: an explainer-mode mechanism insert (silent, no captions, 15.0 s, 1280×720 and
+  720×1280, 30 fps) rendered three times from one content file: the same six steps, titles and
+  labels in `diagram-3d` (the default, 3D route), `particles` (3D route) and `cut-paper` (2D route).
+  It shows the structure of the second-generation Tesla Roadster around one idea from the author's
+  Roadster explainer episode: four tyre contact patches can only grip so hard, and the car gets
+  past that limit in two ways.
+- **Request**: from the author's coordinating agent, in English: the same mechanism in the three
+  styles, the subject the new Tesla Roadster's structure (the car from the Roadster episode); short
+  plain-English labels; every number on screen from the episode's research table; no Tesla logo
+  or wordmark on the car.
+- **Steps**: the whole car → four contact patches ("about 1.6 g of grip from the tyres alone") → the
+  car taken apart → suction fans and sealed floor ("4,700 kg of suction in the demo") → two air tanks
+  ("600 litres of compressed air") and cold-gas thrusters ("over 80 kN of thrust") → back together
+  ("Two ways past the grip limit"). A footnote says the figures are Tesla's own claims at its
+  October 2026 event, not independently tested.
+- **Sources**: the car is the episode's procedural three.js model (a lofted smooth shell modelled
+  from public photos; credited on screen as "Tesla Roadster (2nd gen), modelled from public
+  photos"); no photo, footage or brand mark is used. The figures come from the episode's research
+  table (Tesla's livestream of 2026-10-15 and tesla.com), read by the scenes at render time. The
+  cut-paper car's outlines come from the same model's body and canopy profiles, seen from the side.
+- **Skill version**: 0.9.0 (commit `f65244b`); the current clips and previews were re-rendered with
+  commit `81c89fd` after the card revision below, same steps, timing and render settings. 3D clips
+  rendered with `scripts/render.mjs --gpu` (Chromium, ANGLE Metal, Apple M4 Pro); the cut-paper
+  clip on Canvas 2D.
+- **Host and time**: Claude Code, `claude-opus-5-5`, effort `high`, as a sub-agent of a longer
+  session, so no separate cost figure. About 21 minutes wall clock from creating the work folder to
+  the finished clips, comparisons and previews (reading the Skill before that not counted); each
+  15-second render took under a minute.
+- **Revisions**: 1 by the author: the label cards first carried a coloured stripe on one side,
+  which the author rejected as the AI default look. The cards were redesigned (no stripe or accent
+  outline on any side; a plain white card, or paper in cut-paper, with rounded corners, a soft
+  shadow and generous padding; the accent only on a small dot before the part's name; the figure
+  as the largest line; Inter) and all six clips re-rendered. That rule is now AR-17 in
+  `references/aesthetic-rules.md`. Inside the first run, faults seen in stills were fixed before the
+  final renders (an over-spread exploded view, fans hidden under a duct plate, tanks hidden behind
+  the lifted shell, portrait leaders crossing the car, opaque leftovers in the particle look, paper
+  parts running into the header mid-explode).
+- **Known limits**: in 9:16 one leader crosses the lower parts during the thrust step; the side
+  view makes the cut-paper car small in 9:16.
+- **Previews**: `previews/9-roadster-diagram-3d.webp`, `previews/9-roadster-particles.webp`,
+  `previews/9-roadster-cut-paper.webp` (640×360, 15 fps, the full 15 s loop).
+- **Rights**: the Roadster is Tesla's design, shown here only as an explanatory model without
+  Tesla's marks; the figures are attributed to Tesla on screen.
 
 ## 6 · Brick world (reference) / 积木（参照版）
 

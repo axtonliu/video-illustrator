@@ -1,10 +1,10 @@
 {
   "name": "video-illustrator",
-  "version": "0.6.0",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/render.test.mjs tests/audio.test.mjs tests/three.test.mjs tests/onsets.test.mjs tests/contact.test.mjs tests/styles.test.mjs tests/brand.test.mjs"
+    "test": "node --test tests/render.test.mjs tests/audio.test.mjs tests/three.test.mjs tests/onsets.test.mjs tests/contact.test.mjs tests/styles.test.mjs tests/brand.test.mjs tests/excerpt.test.mjs tests/mechanism.test.mjs tests/facts.test.mjs tests/footage.test.mjs tests/episode.test.mjs tests/explain.test.mjs"
   },
   "engines": {
     "node": ">=20"

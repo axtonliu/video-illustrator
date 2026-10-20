@@ -1,8 +1,14 @@
 # Style atlas / 风格目录
 
-24 starting art directions, grouped for discovery. These are authored reference
-specifications, not 24 validated generated videos. Read only the selected direction
+26 starting art directions, grouped for discovery. These are authored reference
+specifications, not 26 validated generated videos. Read only the selected direction
 and shared composition/directing guidance. A supplied custom style remains valid.
+
+Every mode picks from this one atlas: a promo, an explainer insert and a whole episode differ in
+input and length, not in where their look comes from. When the user names no style, a promo
+picks by content (below), and explainer and episode modes default to
+[图解立体 · `diagram-3d`](diagram-3d.md). Whether a style can carry a mechanism, and on which
+route, is in [Carrying an explainer](#carrying-an-explainer--讲解承载).
 
 Select by what the content needs to communicate and what the viewer should feel.
 Use recognizable materials, object construction and movement rather than counting
@@ -108,6 +114,13 @@ two styles' tokens reads as a collage of two films.
 | [低多边形 · `low-poly`](low-poly.md) | Faceted volume, clear landmarks and spatial reveal |
 | [玻璃产品 · `glass-product`](glass-product.md) | Edges, thickness and light reveal an object or feature |
 
+## Diagram & light / 图解与光
+
+| Style | Distinctive expressive mechanism |
+|---|---|
+| [图解立体 · `diagram-3d`](diagram-3d.md) | Calm studio-lit models on light paper; one warm accent on the place changing now |
+| [粒子光轨 · `particles`](particles.md) | Structures form out of points of light; things travel as streams |
+
 ## Material & theatre / 材质与剧场
 
 | Style | Distinctive expressive mechanism |
@@ -118,8 +131,53 @@ two styles' tokens reads as a collage of two films.
 | [纸艺立体书 · `paper-pop-up`](paper-pop-up.md) | Connected planes unfold around legible hinges |
 | [彩色玻璃 · `stained-glass`](stained-glass.md) | Bounded panes and moving illumination reveal relationships |
 
+## Carrying an explainer / 讲解承载
+
+An explainer (explainer mode, or an episode's mechanism segments) needs persistent subjects, links
+between them, a packet or change that travels, one visible change per cue, and labels that stay
+readable. The content is written once as `SUBJECTS`, `LINKS` and `STEPS`; the
+[3D starter](mechanism-template.html) and the [2D starter](mechanism-template-2d.html) read the same
+lists, so the style decides the route and the look, not the content. **3D**: start from the 3D
+starter and change its `PALETTE`, `FINISH`/`paint()` and motion; for a look that is not lit solids,
+keep the geometry, `tint()` and `spin()` and change how the meshes draw. **2D**: start from the 2D
+starter and replace its `PALETTE`, `MOTION` and section 3 (the drawing functions) with the style's
+craft. **Not suited** means the medium works against the contract; use the style for other
+segments (a cold open, a scene between mechanisms) rather than forcing the mechanism into it.
+
+| Style | Fit | How, or why not |
+|---|---|---|
+| `diagram-3d` | 3D, default | The 3D starter as shipped. Proven on a real passage (VALIDATION.md 0.7) and the starter example (0.9). |
+| `particles` | 3D | Draw each mesh as surface-sampled points, links as dotted streams, the packet as an amber cluster with a trail; floor shadows and AO off. Proven on the starter example (0.9). Weak when the subject must be a recognisable object or person. |
+| `cut-paper` | 2D | The 2D starter as shipped: cut pieces, grain anchored to the piece, lift shadow on focus, perforated-strip links, poses on 2s. Proven on the starter example (0.9). Not for precise interfaces or dense data. |
+| `whiteboard` | 2D | Draw subjects and links on, keep earlier relations on the board; one new mark per cue. |
+| `chalkboard` | 2D | As whiteboard on slate; partial erasure can show a part being replaced. Dark ground: check the caption band contrast. |
+| `pencil-sketch` | 2D | Hatched subjects, a drawn line for each link, the accent as the one inked or coloured place. |
+| `editorial-motion` | 2D | Subjects as type blocks or containers, links as rules, the accent as a solid stamp or keyword block. |
+| `blueprint` | 2D | Sections and aligned parts; links as dimensioned runs. Also possible in 3D with line materials. |
+| `isometric` | 2D or 3D | A stable projected world; in 3D, an orthographic camera on the 3D starter. |
+| `low-poly` | 3D | Flat-shaded faceted finishes on the 3D starter; keep small parts large enough that facets do not hide them. |
+| `clay-stop-motion` | 3D | `FINISH.clay` on every part and poses stepped at 12 fps; contact squash only on arrival. |
+| `paper-pop-up` | 3D | Hinged planes that unfold to reveal a structure step by step; less natural for packets travelling between parts. |
+| `glass-product` | 3D | One real object revealing a feature with transmission materials; on light paper, glass hides small abstract parts, so keep it to a few large subjects. |
+| `flat-cartoon` | 2D | When the subjects are actors (who hands what to whom); characters act the change. |
+| `ascii-terminal` | 2D | Software and data flows where text cells are the actors; not for physical objects. |
+| `risograph` | 2D, limited | Two or three inks cap the colour roles; keep registration offset off the labels. |
+| `halftone-comic` | 2D, limited | A panel per cue can step a sequence, but cutting between panels breaks persistent subjects; use for an ordered sequence, not a network. |
+| `pixel-art` | 2D, limited | A grid world with sprites as packets works; small text needs full-resolution cards over the grid. The author's own episodes do not use it (decided in 2026-10); it remains a promo style. |
+| `ink-wash` | Not suited | Ink mass and wet edges blur part boundaries and travelling packets; good for atmosphere between mechanisms. The author's own episodes do not use it (decided in 2026-10); it remains a promo style. |
+| `watercolor` | Not suited | Diffused edges make discrete parts and links hard to read. |
+| `oil-impasto` | Not suited | Heavy paint planes swallow small parts and labels. |
+| `woodcut` | Not suited | Carved masses are slow to change and cannot show one small change per cue. |
+| `cel-anime` | Not suited | Its strength is character acting; a mechanism insert gives it nothing to act. |
+| `rubber-hose` | Not suited | Elastic exaggeration distorts the very relations the mechanism has to show. |
+| `shadow-puppetry` | Not suited | Silhouettes have no interior detail to show parts or labels. |
+| `stained-glass` | Not suited | Leading lines fragment every subject; labels do not survive. |
+
+The `cinematic` treatment is for promos; an explainer insert skips it.
+
 ## Quick routes
 
+- Show a mechanism in an explainer or episode: diagram-3d (default), then the table above.
 - Explain a causal or logical relationship: whiteboard, chalkboard, editorial motion.
 - Inspect a constructed mechanism: blueprint, isometric, low-poly.
 - Tell a tactile transformation: cut-paper, clay-stop-motion, paper-pop-up.
@@ -127,7 +185,7 @@ two styles' tokens reads as a collage of two films.
 - Build atmosphere through drawn material: ink-wash, watercolor, pencil-sketch, oil-impasto.
 - Give a graphic statement a print identity: risograph, woodcut, halftone-comic.
 - Stage a digital world: pixel-art or ascii-terminal.
-- Reveal through light: glass-product or stained-glass.
+- Reveal through light: glass-product, stained-glass or particles.
 
 These routes are suggestions, not restrictions or a ranking of quality. One style
 can serve several purposes; choose the scene's actual expressive logic. Review an

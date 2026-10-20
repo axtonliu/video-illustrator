@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>video-illustrator mechanism explainer starter</title>
+<!--
+  Explainer-mode starter for scripts/render.mjs (see references/explainer.md).
+  A few persistent subjects on a light table, links between them, and packets that travel
+  along the links when the narration says so. One scene renders both 16:9 and 9:16: each
+  subject has a landscape and a portrait position, and the camera fits the subjects into the
+  frame's safe area (portrait keeps the lower quarter free for the editor's subtitles).
+  Copy it next to the project as scene.html and edit section 1 only: SUBJECTS, LINKS, STEPS.
+  Times in STEPS come from words.json (scripts/excerpt.mjs), in seconds from the clip start.
+  Query options (render.mjs --query): captions=1 burns the words.json cues at the bottom for a
+  preview (the delivered picture stays caption-free), grid=1 draws the safe area, ao=0 turns the
+  ambient occlusion off.
+  Look defaults (section 2, leave them on): a procedural studio environment with softbox strips
+  for the reflections, Neutral tone mapping with paper() so the background lands exactly on the
+  paper token, a soft key shadow, a blurred contact shadow under the subjects, GTAO and MSAA
+  through an EffectComposer. Helpers: paint() with a FINISH per part (satin or clay for abstract
+  concept models, the real materials for real objects), arrow() for a
+  lathed arrow with a filleted head (links get its head). Curved subjects (a car body, anything
+  organic) need a lofted smooth shell or a licensed model, not boxes and spheres.
+-->
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--paper)}
+  canvas{display:block;position:absolute;inset:0}
+  #ui{position:absolute;inset:0;pointer-events:none;font-family:"PingFang SC","Hiragino Sans GB","Noto Sans CJK SC","Source Han Sans SC",system-ui,sans-serif;color:var(--ink)}
+  .card{position:absolute;transform:translate(-50%,-50%);background:rgba(255,255,255,.95);border:1px solid rgba(22,32,43,.06);border-radius:.6em;padding:.5em 1.25em .55em;box-shadow:0 1px 2px rgba(22,32,43,.06),0 .15em .6em rgba(22,32,43,.10);white-space:nowrap;text-align:center}
+  .card b{display:block;font-weight:700;letter-spacing:.02em}
+  .card span{display:block;color:var(--sub);font-size:.62em;margin-top:.25em}
+  #payload{position:absolute;transform:translate(-50%,-100%);background:var(--ink);color:#fff;border-radius:.4em;padding:.18em .5em;font-size:.55em;font-weight:600;white-space:nowrap;font-family:Menlo,"PingFang SC",monospace}
+  /* The active card: its accent is a small dot in the left padding (the title stays centred and
+     nothing shifts) and a deeper lift. Never a stripe on one side of the card or an accent outline
+     (aesthetic-rules.md AR-17). */
+  .card b{position:relative}
+  .card.on b::before{content:"";position:absolute;left:-.75em;top:50%;width:.4em;height:.4em;margin-top:-.2em;border-radius:50%;background:var(--accent)}
+  .card.on{box-shadow:0 1px 2px rgba(22,32,43,.08),0 .2em .7em rgba(22,32,43,.16)}
+  #head{position:absolute}
+  #kicker{color:var(--sub);letter-spacing:.14em;font-size:.42em;margin-bottom:.35em}
+  #title{font-weight:800;letter-spacing:.01em;line-height:1.15}
+  #caption{position:absolute;left:0;right:0;text-align:center;font-weight:600}
+  #grid{position:absolute;border:2px dashed rgba(200,40,40,.6);display:none}
+</style>
+<script type="importmap">
+{ "imports": { "three": "/__vi/three/build/three.module.js", "three/addons/": "/__vi/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div id="ui"><div id="payload"></div><div id="head"><div id="kicker"></div><div id="title"></div></div><div id="caption"></div><div id="grid"></div></div>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { HorizontalBlurShader } from 'three/addons/shaders/HorizontalBlurShader.js';
+import { VerticalBlurShader } from 'three/addons/shaders/VerticalBlurShader.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+// 1. Content: edit this section ------------------------------------------------------
+const FILM = { duration: 12, kicker: 'HOW IT WORKS' };
+// Colour roles: a light cool paper, dark text, one structure colour for the main parts, a light
+// secondary for links and minor parts, and one warm accent that marks only the single place
+// that is changing now (a travelling packet, or the one subject the sentence is about).
+const PALETTE = {
+  paper: '#F4F6F8', ink: '#16202B', sub: '#5C6773', accent: '#E0962A',
+  structure: 0x6E8FB3, structureDark: 0x3F5F82, secondary: 0xB4C8DC, accentHex: 0xE0962A, screen: 0xEEF2F6
+};
+// shape: orb | gear | folder | device | doc | block.  pos: [x, y, z] per aspect (y is up;
+// the camera looks almost straight on, so y reads as screen height).  label: where the card
+// sits relative to the subject: below | above | left | right (card: false for none).
+// A subject listed in a step's spawn fades in at that step.
+const SUBJECTS = [
+  { id: 'planner', shape: 'orb', title: 'Planner', note: 'decides the next step',
+    pos: { landscape: [-3.4, 1.5, 0], portrait: [0, 3.2, 0] }, label: { landscape: 'left', portrait: 'right' } },
+  { id: 'worker', shape: 'gear', title: 'Worker', note: 'runs the step',
+    pos: { landscape: [0.2, 0, 0.4], portrait: [-1.3, 0, 0.4] }, label: { landscape: 'below', portrait: 'left' } },
+  { id: 'store', shape: 'folder', title: 'Storage', note: 'keeps the files',
+    pos: { landscape: [3.4, 0, 0], portrait: [1.5, -1.9, 0] }, label: { landscape: 'below', portrait: 'right' } }
+];
+// bend: control point offset from the straight line's midpoint, per aspect.
+const LINKS = [
+  { id: 'ask', from: 'planner', to: 'worker', bend: { landscape: [0, 0.6, 0.6], portrait: [-1.2, 0.2, 0.6] } },
+  { id: 'back', from: 'worker', to: 'planner', bend: { landscape: [0.2, -0.4, 1.2], portrait: [0.9, 0.4, 1.0] } },
+  { id: 'save', from: 'worker', to: 'store', bend: { landscape: [0, 0.5, 0.4], portrait: [0.2, -0.2, 0.8] } }
+];
+// One visible change per step. at = seconds from the clip start (take them from words.json).
+// focus: subjects that light up. send: a packet travels a link in dur seconds, optionally
+// with a label naming what it carries (send: {link, dur, label}). screen: lines
+// on a device subject's screen. spawn: subjects that fade in at this step and stay.
+const STEPS = [
+  { at: 0.0, title: 'Three parts, three jobs', focus: ['planner', 'worker', 'store'] },
+  { at: 2.0, title: 'The planner decides', focus: ['planner'], send: { link: 'ask', dur: 1.4, label: 'next step' } },
+  { at: 4.5, title: 'The worker runs it', focus: ['worker'] },
+  { at: 6.5, title: 'The result comes back', focus: ['planner'], send: { link: 'back', dur: 1.3 } },
+  { at: 9.0, title: 'Then it is saved', focus: ['store'], send: { link: 'save', dur: 1.2 } }
+];
+// Preview captions only (captions=1). Paste cues from words.json: {text, start, end}.
+const CUES = [];
+
+// 2. Setup -----------------------------------------------------------------------------
+const query = new URLSearchParams(location.search);
+const VI = window.videoIllustrator || { fps: 30, width: innerWidth, height: innerHeight };
+const W = VI.width, H = VI.height;
+const ASPECT = W >= H ? 'landscape' : 'portrait';
+// Safe areas as fractions of the frame: the header sits on top, the editor's subtitles below
+// LABEL_BOTTOM (portrait keeps its lower quarter free). Subjects are fitted into SAFE, which
+// leaves room under them for 'below' cards; cards stay above LABEL_BOTTOM.
+// Every subject, card and moving thing stays inside a 5% margin. Portrait: nothing but paper at
+// or below 75% of the height (the editor's subtitle band, every frame). Landscape: nothing in
+// the bottom 18%.
+const SAFE = ASPECT === 'landscape' ? { top: 0.24, bottom: 0.72, left: 0.06, right: 0.94 } : { top: 0.17, bottom: 0.66, left: 0.06, right: 0.94 };
+const LABEL_BOTTOM = ASPECT === 'landscape' ? 0.82 : 0.75;
+const U = Math.min(W, H) / 720; // 1 at 720p, scales every pixel size below
+for (const [key, value] of Object.entries(PALETTE)) if (typeof value === 'string') document.documentElement.style.setProperty('--' + key, value);
+
+// MSAA happens in the composer's render target, so the canvas itself needs no antialias.
+const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(1);
+renderer.setSize(W, H, false);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+// Neutral keeps mid-tones and hues close to their hex values (ACES shifts and darkens them).
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap; // PCFSoftShadowMap is gone in 0.186; PCF + radius is soft
+document.body.prepend(renderer.domElement);
+
+// The tone mapper runs over the background too (it is applied in the OutputPass), so a flat
+// surface given the token colour would come out a shade off. paper(hex) returns the linear
+// colour that the Neutral tone mapper turns back into exactly that sRGB hex.
+function neutral([r, g, b]) {
+  const x = Math.min(r, g, b), off = x < 0.08 ? x - 6.25 * x * x : 0.04;
+  r -= off; g -= off; b -= off;
+  const peak = Math.max(r, g, b), start = 0.76;
+  if (peak < start) return [r, g, b];
+  const d = 1 - start, np = 1 - d * d / (peak + d - start);
+  r *= np / peak; g *= np / peak; b *= np / peak;
+  const k = 1 - 1 / (0.15 * (peak - np) + 1);
+  return [r + (np - r) * k, g + (np - g) * k, b + (np - b) * k];
+}
+function paper(hex) {
+  const c = new THREE.Color(hex), target = [c.r, c.g, c.b];
+  let x = target.slice();
+  for (let i = 0; i < 80; i++) { const y = neutral(x); x = x.map((v, j) => v + (target[j] - y[j]) * 0.9); }
+  return new THREE.Color(x[0], x[1], x[2]);
+}
+
+const scene = new THREE.Scene();
+scene.background = paper(PALETTE.paper);
+
+// Procedural studio: a grey dome with long overhead softbox strips (the crisp highlight lines on
+// clearcoat), a big key panel, a cool fill and two rim strips. Built once into a PMREM map.
+function studioEnv() {
+  const env = new THREE.Scene();
+  env.add(new THREE.Mesh(new THREE.SphereGeometry(50, 64, 32), new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false,
+    vertexShader: 'varying vec3 vp; void main(){ vp = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
+    fragmentShader: `varying vec3 vp; void main(){ float h = vp.y;
+      vec3 sky = mix(vec3(0.36, 0.38, 0.41), vec3(0.50, 0.52, 0.55), smoothstep(0.0, 0.9, h));
+      vec3 floorC = mix(vec3(0.46, 0.48, 0.51), vec3(0.66, 0.69, 0.72), smoothstep(-0.6, 0.0, h));
+      gl_FragColor = vec4(h > 0.0 ? sky : floorC, 1.); }`
+  })));
+  const v = (x, y, z) => new THREE.Vector3(x, y, z);
+  const softbox = (w, h, intensity, pos, look, color = 0xffffff) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(intensity), side: THREE.DoubleSide }));
+    m.position.copy(pos); m.lookAt(look); env.add(m);
+  };
+  softbox(26, 1.6, 9, v(0, 14, -2.5), v(0, 0, -2.5));
+  softbox(26, 1.2, 7, v(0, 14, 2.5), v(0, 0, 2.5));
+  softbox(24, 0.7, 6, v(0, 13, 0), v(0, 0, 0));
+  softbox(16, 8, 3.2, v(6, 6, 16), v(0, 1, 0));
+  softbox(16, 8, 1.4, v(-6, 5, -16), v(0, 1, 0), 0xe8f0ff);
+  softbox(3, 14, 5, v(-18, 6, 4), v(0, 1, 0));
+  softbox(2, 12, 2.5, v(18, 6, -2), v(0, 1, 0));
+  const pm = new THREE.PMREMGenerator(renderer);
+  const tex = pm.fromScene(env, 0.015).texture;
+  pm.dispose();
+  return tex;
+}
+scene.environment = studioEnv();
+scene.environmentIntensity = 0.9;
+scene.add(new THREE.HemisphereLight(0xffffff, 0xcfd6de, 0.3));
+const key = new THREE.DirectionalLight(0xffffff, 1.5);
+key.position.set(4, 9, 7);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.left = -10; key.shadow.camera.right = 10; key.shadow.camera.top = 10; key.shadow.camera.bottom = -10;
+key.shadow.radius = 5;
+key.shadow.bias = -0.0003;
+key.shadow.normalBias = 0.01;
+scene.add(key);
+const rim = new THREE.DirectionalLight(0xdfe9ff, 0.7);
+rim.position.set(-6, 4, -6);
+scene.add(rim);
+
+// Materials: the light, shadows and rounded edges above carry the quality and stay fixed; the
+// finish is chosen per subject. Abstract concept models (a planner, a worker, storage) default to
+// satin or clay, which reads calm, like a studio clay model, not like toy plastic. Real objects
+// (a car, a phone) get the materials of the real thing: gloss clearcoat paint, glass, rubber,
+// satin metal. Finishes can mix in one frame. paint() is a MeshPhysicalMaterial, satin unless a
+// FINISH or per-part metalness / roughness / clearcoat is passed.
+const FINISH = {
+  clay:  { roughness: 0.72, metalness: 0, clearcoat: 0 },                                // matte, studio clay model
+  satin: { roughness: 0.45, metalness: 0.05, clearcoat: 0.25, clearcoatRoughness: 0.3 }, // abstract parts (default)
+  metal: { roughness: 0.34, metalness: 0.3, clearcoat: 0.4 },                            // satin metal bases, rings
+  gloss: { roughness: 0.38, metalness: 0.05, clearcoat: 0.8, clearcoatRoughness: 0.08 }, // real painted shells, car paint
+};
+const paint = (color, extra = {}) => new THREE.MeshPhysicalMaterial({ color, ...FINISH.satin, ...extra });
+const BODY = paint(PALETTE.structure);                                                  // satin shells of abstract parts
+const DARK = paint(PALETTE.structureDark, FINISH.metal);                               // satin metal bases, rings
+const MATTE = paint(0xffffff, FINISH.clay);                                           // paper, labels on objects
+const shadowCaster = mesh => { mesh.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); return mesh; };
+// Rounded edges catch the softbox highlights; sharp BoxGeometry edges read as cheap.
+const rbox = (w, h, d, r = Math.min(w, h, d) * 0.18) => new RoundedBoxGeometry(w, h, d, 4, r);
+
+// A lathed arrow along +y from the origin: rounded shaft foot, filleted head rim, softened tip.
+// len includes the head; with len === headL it is just the head (link tips use that).
+function arrowGeometry(len, r, headR, headL) {
+  const s = Math.max(0, len - headL), f = headR * 0.08;
+  const pts = s > r ? [[0, 0], [r * 0.7, 0], [r, r * 0.3], [r, s - f]] : [[0, 0], [r, 0]];
+  pts.push([headR * 0.96, s], [headR, s + f], [headR * 0.085, len - headR * 0.04], [0, len]);
+  return new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), 64);
+}
+function arrow(from, dir, len, material, { r = 0.05, headR = 0.14, headL = 0.34 } = {}) {
+  const m = new THREE.Mesh(arrowGeometry(len, r, headR, headL), material);
+  m.position.copy(from);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+  m.castShadow = true; m.receiveShadow = true;
+  return m;
+}
+
+// 3. Shapes: each returns {group, anchor, tint(on), spin(angle)} ---------------------------
+function gearGeometry(r, teeth, depth) {
+  const s = new THREE.Shape();
+  for (let i = 0; i < teeth * 2; i++) {
+    const a0 = (i / (teeth * 2)) * Math.PI * 2, a1 = ((i + 1) / (teeth * 2)) * Math.PI * 2;
+    const rr = i % 2 === 0 ? r : r * 0.8;
+    if (i === 0) s.moveTo(Math.cos(a0) * rr, Math.sin(a0) * rr);
+    s.lineTo(Math.cos(a0) * rr, Math.sin(a0) * rr);
+    s.lineTo(Math.cos(a1) * rr, Math.sin(a1) * rr);
+  }
+  const hole = new THREE.Path();
+  hole.absarc(0, 0, r * 0.35, 0, Math.PI * 2, true);
+  s.holes.push(hole);
+  const g = new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 2 });
+  g.center();
+  return g;
+}
+
+function screenTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512; canvas.height = 320;
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  let last = null;
+  return { tex, draw(lines) {
+    const keyText = lines.join('\n');
+    if (keyText === last) return;
+    last = keyText;
+    const c = canvas.getContext('2d');
+    c.fillStyle = '#' + PALETTE.screen.toString(16).padStart(6, '0');
+    c.fillRect(0, 0, 512, 320);
+    c.fillStyle = PALETTE.ink;
+    lines.forEach((line, i) => {
+      c.font = (i === 0 ? '700 34px ' : '400 24px ') + 'Menlo, "PingFang SC", monospace';
+      c.fillText(line, 28, 60 + i * 44);
+    });
+    c.fillStyle = '#' + PALETTE.structure.toString(16).padStart(6, '0');
+    c.fillRect(28, 60 + lines.length * 44, 300, 8);
+    tex.needsUpdate = true;
+  } };
+}
+
+const SHAPES = {
+  orb() {
+    const g = new THREE.Group();
+    const base = new THREE.Mesh(rbox(1.5, 0.16, 1.1, 0.06), DARK); base.position.y = -0.5; g.add(base);
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.42, 48, 32), BODY.clone()); g.add(core);
+    const ringA = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.025, 24, 128), DARK); g.add(ringA);
+    const ringB = ringA.clone(); g.add(ringB);
+    return { group: g, anchor: new THREE.Vector3(0, -0.45, 0.3), tint: on => core.material.color.set(on ? PALETTE.accentHex : PALETTE.structure),
+      spin: a => { ringA.rotation.set(1.1, a * 0.6, 0); ringB.rotation.set(-0.5, 0.4, a * 0.4); } };
+  },
+  gear() {
+    const g = new THREE.Group();
+    const big = new THREE.Mesh(gearGeometry(0.62, 12, 0.22), BODY.clone()); g.add(big);
+    const small = new THREE.Mesh(gearGeometry(0.4, 8, 0.22), BODY.clone()); small.position.set(0.86, -0.42, 0.05); g.add(small);
+    return { group: g, anchor: new THREE.Vector3(0, 0, 0.2), tint: on => [big, small].forEach(m => m.material.color.set(on ? PALETTE.accentHex : PALETTE.structure)),
+      spin: a => { big.rotation.z = a; small.rotation.z = -a * 1.5 + 0.2; } };
+  },
+  folder() {
+    const g = new THREE.Group();
+    const back = new THREE.Mesh(rbox(1.4, 1.0, 0.1, 0.04), BODY.clone()); back.position.set(0, 0.1, -0.15); g.add(back);
+    const tab = new THREE.Mesh(rbox(0.5, 0.16, 0.1, 0.04), BODY.clone()); tab.position.set(-0.42, 0.66, -0.15); g.add(tab);
+    const front = new THREE.Mesh(rbox(1.4, 0.8, 0.1, 0.04), DARK); front.position.set(0, -0.02, 0.05); front.rotation.x = -0.18; g.add(front);
+    return { group: g, anchor: new THREE.Vector3(0, 0.45, 0.1), tint: on => [back, tab].forEach(m => m.material.color.set(on ? PALETTE.accentHex : PALETTE.structure)), spin() {} };
+  },
+  device() {
+    const g = new THREE.Group();
+    const base = new THREE.Mesh(rbox(3.0, 0.12, 1.9, 0.05), BODY.clone()); base.position.y = -0.7; g.add(base);
+    const screen = screenTexture();
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(3.0, 1.9, 0.08), [DARK, DARK, DARK, DARK, new THREE.MeshBasicMaterial({ map: screen.tex, toneMapped: false }), DARK]);
+    lid.position.set(0, 0.25, -0.95); lid.rotation.x = -0.12; g.add(lid);
+    return { group: g, anchor: new THREE.Vector3(0, -0.55, 0.2), screen, tint: on => base.material.color.set(on ? PALETTE.accentHex : PALETTE.structure), spin() {} };
+  },
+  doc() {
+    const g = new THREE.Group();
+    const sheet = new THREE.Mesh(rbox(0.7, 0.9, 0.03, 0.012), MATTE.clone()); g.add(sheet);
+    for (let i = 0; i < 4; i++) { const line = new THREE.Mesh(new THREE.BoxGeometry(0.46 - (i === 3 ? 0.16 : 0), 0.04, 0.01), DARK); line.position.set(-(i === 3 ? 0.08 : 0), 0.25 - i * 0.15, 0.02); g.add(line); }
+    return { group: g, anchor: new THREE.Vector3(0, 0, 0.05), tint: on => sheet.material.color.set(on ? 0xffffff : 0xf4f4f0), spin() {} };
+  },
+  block() {
+    const g = new THREE.Group();
+    const box = new THREE.Mesh(rbox(1.1, 1.1, 1.1), BODY.clone()); g.add(box);
+    return { group: g, anchor: new THREE.Vector3(0, 0, 0.6), tint: on => box.material.color.set(on ? PALETTE.accentHex : PALETTE.structure), spin() {} };
+  }
+};
+
+const ui = document.getElementById('ui');
+ui.style.fontSize = (30 * U) + 'px';
+const nodes = new Map();
+for (const s of SUBJECTS) {
+  const built = SHAPES[s.shape]();
+  shadowCaster(built.group);
+  built.group.position.fromArray(s.pos[ASPECT]);
+  scene.add(built.group);
+  const card = document.createElement('div');
+  if (s.card === false) card.style.display = 'none';
+  card.className = 'card';
+  card.innerHTML = `<b></b><span></span>`;
+  card.querySelector('b').textContent = s.title;
+  card.querySelector('span').textContent = s.note || '';
+  if (!s.note) card.querySelector('span').remove();
+  ui.appendChild(card);
+  const extent = new THREE.Box3().setFromObject(built.group).getSize(new THREE.Vector3()).x / 2;
+  nodes.set(s.id, { ...s, ...built, extent, home: built.group.position.clone(), card });
+}
+// Ground and contact shadow live on layer 1: the main camera sees them, the contact-shadow
+// camera (layer 0 only) does not, so only subjects, links and the packet darken the floor.
+// The opacity looks high because the tone mapper compresses everything near the paper's white.
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.ShadowMaterial({ opacity: 0.5, color: 0x1e293b }));
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+ground.layers.set(1);
+scene.add(ground);
+
+// Links: a tube up to the head's base, then a lathed arrow head at the target (head: false for none).
+const HEAD = { r: 0.045, headR: 0.13, headL: 0.3 };
+const anchorOf = id => { const n = nodes.get(id); return n.home.clone().add(n.anchor); };
+const links = new Map();
+for (const l of LINKS) {
+  const a = anchorOf(l.from), b = anchorOf(l.to);
+  const mid = a.clone().lerp(b, 0.5).add(new THREE.Vector3().fromArray(l.bend?.[ASPECT] || [0, 0.5, 0.5]));
+  const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
+  const material = paint(PALETTE.secondary);
+  const end = l.head === false ? 1 : 1 - HEAD.headL / curve.getLength(); // where the shaft stops
+  const shaft = new THREE.Curve();
+  shaft.getPoint = (u, out = new THREE.Vector3()) => out.copy(curve.getPointAt(u * end));
+  const tube = new THREE.Mesh(new THREE.TubeGeometry(shaft, 96, HEAD.r, 16, false), material);
+  tube.castShadow = true;
+  scene.add(tube);
+  if (l.head !== false) scene.add(arrow(curve.getPointAt(end), b.clone().sub(curve.getPointAt(end)), HEAD.headL, material, HEAD));
+  links.set(l.id, { ...l, curve, tube, end });
+}
+const packet = new THREE.Mesh(new THREE.SphereGeometry(0.13, 32, 24), paint(PALETTE.accentHex, { emissive: PALETTE.accentHex, emissiveIntensity: 0.15, roughness: 0.3, clearcoat: 1 }));
+packet.castShadow = true;
+scene.add(packet);
+
+// Ground sits under the lowest subject; the camera fits all subjects into SAFE.
+const box = new THREE.Box3();
+for (const n of nodes.values()) box.expandByObject(n.group);
+ground.position.y = box.min.y - 0.02;
+const camera = new THREE.PerspectiveCamera(28, W / H, 0.1, 200);
+const center = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+const safeW = (SAFE.right - SAFE.left), safeH = (SAFE.bottom - SAFE.top);
+const halfV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+// fitCamera() picks the scale (pixels per world unit at the subjects) so the subjects fill SAFE
+// and every left or right card still has room beside its subject inside the 5% margin, then
+// shifts the image so subjects and cards together sit centred. A card is never pushed back over
+// its subject. Card widths are measured, so it runs again on every frame (fonts may load late).
+let DIST = 0;
+function fitCamera() {
+  const span = scale => {
+    let lo = Infinity, hi = -Infinity;
+    for (const n of nodes.values()) {
+      const x = (n.home.x - center.x) * scale, r = n.extent * scale, side = n.label?.[ASPECT] || 'below';
+      const cw = n.card.style.display === 'none' ? 0 : n.card.offsetWidth;
+      lo = Math.min(lo, x - r - (side === 'left' ? 14 * U + cw : 0), side === 'left' || side === 'right' ? Infinity : x - cw / 2);
+      hi = Math.max(hi, x + r + (side === 'right' ? 14 * U + cw : 0), side === 'left' || side === 'right' ? -Infinity : x + cw / 2);
+    }
+    return [lo, hi];
+  };
+  let a = 1, b = Math.min(safeH * H / (size.y + 1.0), safeW * W / (size.x + 1.0));
+  const fits = scale => span(scale)[1] - span(scale)[0] <= 0.9 * W;
+  if (fits(b)) a = b; else for (let i = 0; i < 40; i++) { const m = (a + b) / 2; if (fits(m)) a = m; else b = m; }
+  const [lo, hi] = span(a);
+  DIST = H / (2 * a) / halfV + size.z / 2;
+  camera.setViewOffset(W, H, (lo + hi) / 2, (0.5 - (SAFE.top + SAFE.bottom) / 2) * H, W, H);
+}
+fitCamera();
+camera.layers.enable(1); // sees the ground and the contact shadow
+
+// Contact shadow: an orthographic camera looks up from the ground at everything on layer 0,
+// draws its depth as a dark alpha (nearer the floor = darker), blurs it twice and lays it on the
+// floor. Re-rendered every frame because subjects lift and spawn; things higher than REACH above
+// the floor leave none (the key light's shadow covers them).
+function contactShadow({ pad = 1.6, reach = 1.2, res = 512, darkness = 2.6, opacity = 1 } = {}) {
+  const PW = size.x + 2 * pad, PD = size.z + 2 * pad;
+  const rt = new THREE.WebGLRenderTarget(res, Math.round(res * PD / PW)), rtb = rt.clone();
+  rt.texture.generateMipmaps = rtb.texture.generateMipmaps = false;
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(PW, PD).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ map: rt.texture, transparent: true, opacity, depthWrite: false }));
+  plane.renderOrder = 1; plane.scale.y = -1;
+  plane.position.set(center.x, ground.position.y + 0.003, center.z);
+  plane.layers.set(1);
+  const cam = new THREE.OrthographicCamera(-PW / 2, PW / 2, PD / 2, -PD / 2, 0, reach);
+  cam.rotation.x = Math.PI / 2;
+  cam.position.set(center.x, ground.position.y, center.z);
+  cam.updateMatrixWorld();
+  const depth = new THREE.MeshDepthMaterial();
+  depth.depthTest = depth.depthWrite = false;
+  depth.onBeforeCompile = sh => {
+    sh.fragmentShader = sh.fragmentShader.replace('gl_FragColor = vec4( vec3( 1.0 - fragCoordZ ), opacity );',
+      `gl_FragColor = vec4( vec3( 0.06, 0.08, 0.12 ), ( 1.0 - fragCoordZ ) * ${darkness.toFixed(3)} );`);
+  };
+  const hb = new THREE.ShaderMaterial(HorizontalBlurShader), vb = new THREE.ShaderMaterial(VerticalBlurShader);
+  hb.depthTest = vb.depthTest = false;
+  const quad = new THREE.Mesh(new THREE.PlaneGeometry(), hb);
+  const blur = amount => {
+    quad.material = hb; hb.uniforms.tDiffuse.value = rt.texture; hb.uniforms.h.value = amount / 256;
+    renderer.setRenderTarget(rtb); renderer.render(quad, cam);
+    quad.material = vb; vb.uniforms.tDiffuse.value = rtb.texture; vb.uniforms.v.value = amount / 256;
+    renderer.setRenderTarget(rt); renderer.render(quad, cam);
+  };
+  return { plane, render() {
+    const background = scene.background, alpha = renderer.getClearAlpha();
+    scene.background = null; scene.overrideMaterial = depth;
+    renderer.setRenderTarget(rt); renderer.setClearAlpha(0); renderer.clear();
+    renderer.render(scene, cam);
+    scene.overrideMaterial = null; scene.background = background;
+    blur(1.2); blur(0.5);
+    renderer.setRenderTarget(null); renderer.setClearAlpha(alpha);
+  } };
+}
+const contact = contactShadow();
+scene.add(contact.plane);
+
+// Post: MSAA half-float target -> scene -> GTAO (soft occlusion in creases and where parts meet
+// the floor) -> OutputPass (Neutral tone mapping + sRGB). GTAOPass builds its denoise noise from
+// Math.random, so it is constructed under a seeded generator: the same t gives the same pixels
+// on every render.
+function mulberry32(seed) {
+  return () => {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let r = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    r = r + Math.imul(r ^ r >>> 7, 61 | r) ^ r;
+    return ((r ^ r >>> 14) >>> 0) / 4294967296;
+  };
+}
+const seeded = (seed, build) => { const random = Math.random; Math.random = mulberry32(seed); try { return build(); } finally { Math.random = random; } };
+const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 }));
+composer.addPass(new RenderPass(scene, camera));
+if (query.get('ao') !== '0') {
+  const gtao = seeded(7, () => new GTAOPass(scene, camera, W, H));
+  gtao.updateGtaoMaterial({ radius: 0.5, distanceExponent: 1.5, thickness: 1.0, scale: 1.0, samples: 16, distanceFallOff: 1.0 });
+  gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
+  gtao.blendIntensity = 0.9;
+  composer.addPass(gtao);
+}
+composer.addPass(new OutputPass());
+
+const head = document.getElementById('head'), kicker = document.getElementById('kicker'), titleEl = document.getElementById('title');
+head.style.left = (ASPECT === 'landscape' ? 0.055 : 0.07) * W + 'px';
+head.style.top = (ASPECT === 'landscape' ? 0.07 : 0.055) * H + 'px';
+head.style.maxWidth = (ASPECT === 'landscape' ? 0.7 : 0.86) * W + 'px';
+titleEl.style.fontSize = (ASPECT === 'landscape' ? 1.55 : 1.45) + 'em';
+kicker.textContent = FILM.kicker;
+const caption = document.getElementById('caption');
+caption.style.bottom = (ASPECT === 'landscape' ? 0.05 : 0.14) * H + 'px';
+caption.style.fontSize = '0.95em';
+if (query.get('grid') === '1') Object.assign(document.getElementById('grid').style, { display: 'block', left: SAFE.left * W + 'px', top: SAFE.top * H + 'px', width: safeW * W + 'px', height: safeH * H + 'px' });
+
+// 4. Time helpers ------------------------------------------------------------------------
+const clamp01 = x => Math.min(1, Math.max(0, x));
+const ease = x => { x = clamp01(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const stepAt = t => { let i = 0; STEPS.forEach((s, k) => { if (s.at <= t) i = k; }); return i; };
+// Seconds a subject has been in focus before t: drives gear spin without any running clock.
+const focusTime = (id, t) => STEPS.reduce((acc, s, k) => {
+  if (!(s.focus || []).includes(id)) return acc;
+  const end = k + 1 < STEPS.length ? STEPS[k + 1].at : FILM.duration;
+  return acc + Math.max(0, Math.min(t, end) - s.at);
+}, 0);
+const LABEL_PUSH = { below: [0, 1], above: [0, -1], left: [-1, 0], right: [1, 0] };
+const project = v => { const p = v.clone().project(camera); return [(p.x + 1) / 2 * W, (1 - p.y) / 2 * H]; };
+
+// 5. Frame ---------------------------------------------------------------------------------
+window.renderFrame = async t => {
+  const k = stepAt(t), step = STEPS[k];
+  const sinceStep = t - step.at;
+  const prev = STEPS[k - 1];
+  titleEl.textContent = step.title; // set first: card placement reads the header's height
+  fitCamera();
+
+  // The camera holds still: it moves only when a step needs it to reveal something, and the
+  // template has no such step. Depth comes from the three-quarter angle and the light.
+  const yaw = THREE.MathUtils.degToRad(-4), pitch = THREE.MathUtils.degToRad(14);
+  camera.position.set(center.x + Math.sin(yaw) * DIST * Math.cos(pitch), center.y + Math.sin(pitch) * DIST, center.z + Math.cos(yaw) * DIST * Math.cos(pitch));
+  camera.lookAt(center);
+  camera.updateMatrixWorld();
+
+  // The packet in flight, if any: while it travels it is the one accented thing on screen,
+  // and its target lights up only when it arrives.
+  let carrier = null;
+  for (let i = k; i >= 0 && !carrier; i--) if (STEPS[i].send) carrier = { s: STEPS[i], at: STEPS[i].at };
+  const flight = carrier ? (t - carrier.at) / carrier.s.send.dur : Infinity;
+  const accentOne = (step.focus || []).length === 1 && !(flight < 1);
+
+  const placed = []; // card rectangles already laid out this frame, for overlap avoidance
+  for (const n of nodes.values()) {
+    const on = (step.focus || []).includes(n.id);
+    const wasOn = prev && (prev.focus || []).includes(n.id);
+    const blend = on === Boolean(wasOn) ? 1 : ease(sinceStep / 0.35);
+    const lift = (on ? blend : wasOn ? 1 - blend : 0) * 0.18;
+    const spawnStep = STEPS.findIndex(s => (s.spawn || []).includes(n.id));
+    const visible = spawnStep < 0 ? 1 : ease((t - STEPS[spawnStep].at) / 0.5);
+    n.group.position.copy(n.home).add(new THREE.Vector3(0, lift - (1 - visible) * 0.4, 0));
+    n.group.scale.setScalar(0.001 + 0.999 * visible);
+    n.tint(on && accentOne);
+    n.spin(2.6 * focusTime(n.id, t));
+    if (n.screen) n.screen.draw((STEPS.slice(0, k + 1).reverse().find(s => s.screen) || { screen: [n.title] }).screen);
+    const [x, y] = project(n.home.clone().add(new THREE.Vector3(0, lift, 0)));
+    const dir = LABEL_PUSH[n.label?.[ASPECT] || 'below'];
+    // Distance from the subject's centre: its own size on screen plus half the card, so the card never covers it.
+    const [ex] = project(n.home.clone().add(new THREE.Vector3(n.extent, lift, 0)));
+    const reach = Math.abs(ex - x) + 14 * U;
+    // Keep the card inside the frame and below the header (a card never covers the step title).
+    const cw = n.card.offsetWidth / 2, ch = n.card.offsetHeight / 2, margin = Math.max(18 * U, 0.05 * W);
+    const minTop = head.offsetTop + head.offsetHeight + margin + ch;
+    const clampX = v => Math.min(W - margin - cw, Math.max(margin + cw, v));
+    let cx = clampX(x + dir[0] * (reach + cw));
+    const cy = Math.min(LABEL_BOTTOM * H - ch, Math.max(minTop, y + dir[1] * (reach * 0.9 + ch)));
+    // A card that would overlap an earlier one slides sideways, away from it.
+    for (const r of placed) {
+      if (Math.abs(cy - r.cy) < ch + r.ch + 6 * U && Math.abs(cx - r.cx) < cw + r.cw + 6 * U) {
+        cx = clampX(cx >= r.cx ? r.cx + r.cw + cw + 10 * U : r.cx - r.cw - cw - 10 * U);
+      }
+    }
+    if (n.card.style.display !== 'none') placed.push({ cx, cy, cw, ch });
+    n.card.style.left = cx + 'px';
+    n.card.style.top = cy + 'px';
+    n.card.style.opacity = visible;
+    n.card.classList.toggle('on', on && accentOne);
+  }
+
+  // Links: the one carrying a packet is coloured; the packet eases along it, then rests in the target.
+  for (const l of links.values()) l.tube.material.color.set(PALETTE.secondary);
+  packet.visible = false;
+  const payload = document.getElementById('payload');
+  payload.style.opacity = 0;
+  if (carrier) {
+    const l = links.get(carrier.s.send.link);
+    const p = flight;
+    if (p < 1.6) {
+      l.tube.material.color.set(PALETTE.structureDark);
+      packet.visible = p <= 1.05;
+      packet.position.copy(l.curve.getPointAt(ease(p) * l.end));
+      packet.scale.setScalar(1 + 0.25 * Math.sin(Math.PI * clamp01(p)));
+      if (carrier.s.send.label && packet.visible) {
+        const [px, py] = project(packet.position);
+        payload.textContent = carrier.s.send.label;
+        payload.style.left = px + 'px';
+        payload.style.top = py - 16 * U + 'px';
+        payload.style.opacity = Math.min(ease(p / 0.15), ease((1.05 - p) / 0.15));
+      }
+    }
+  }
+
+  // Header: the step title crossfades in over 0.35 s.
+  head.style.opacity = 1;
+  titleEl.style.opacity = k === 0 ? ease(t / 0.4) : ease(sinceStep / 0.35);
+  titleEl.style.transform = `translateY(${(1 - ease(sinceStep / 0.35)) * 10 * U}px)`;
+
+  const cue = query.get('captions') === '1' ? CUES.find(c => c.start <= t && t < c.end) : null;
+  caption.textContent = cue ? cue.text : '';
+
+  contact.render();
+  composer.render();
+};
+window.sceneInfo = { aspect: ASPECT, duration: FILM.duration, subjects: SUBJECTS.length, steps: STEPS.length };
+</script>
+</body>
+</html>

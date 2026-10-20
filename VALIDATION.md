@@ -1,8 +1,150 @@
-# Validation status — 0.6.0
+# Validation status — 0.9.0
 
 Designed for Claude Code + Opus 5.5. Other hosts are unverified.
 Style references, the cinematic treatment and the 3D starter scene are guidance, not
 proof of quality.
+
+## 0.9.0: one system, styles in every mode, macOS, 2026-10-20 (Apple M4 Pro, Node 24.3, FFmpeg 7.1.1, Playwright 1.63.0, three 0.186.1)
+
+`npm test`: **78 pass, 0 fail, 0 skipped** (the 72 tests before this release, six new: one in
+`tests/styles.test.mjs`, two in `tests/mechanism.test.mjs`, and three in `tests/brand.test.mjs`: the
+user's default pack, its rules documents, and a package check that no text file names an absolute
+path on the author's machine, a private folder or internal tool, an e-mail address or a key). Two expectations changed on purpose:
+the atlas counts went from 24 to 26 styles (`diagram-3d` and `particles` added), and the style-name
+pattern now allows a digit.
+
+What changed: SKILL.md runs every mode through one five-step spine; the style atlas registers the
+explainer look as `diagram-3d` and the showcase particles look as `particles`, and says for each of
+the 26 styles whether and how it carries a mechanism (the new test checks one row per style);
+explainer and episode modes pick one main style from the atlas; `references/mechanism-template-2d.html`
+is a 2D starter that reads the same `SUBJECTS`, `LINKS` and `STEPS` as the 3D template (a test
+compares the three lists byte for byte) and ships with cut-paper craft.
+
+The same example mechanism (the 3D template's three subjects, three links and five steps) was
+rendered in three looks with `--gpu`: `diagram-3d` (the 3D template as shipped), `particles` (the 3D
+template with its meshes drawn as surface-sampled points, links as dotted streams, the packet as an
+amber cluster) and `cut-paper` (the 2D starter as shipped). Each has 16:9 stills at 3, 5 and 7.2 s
+and a 9:16 still at 7.2 s, looked at one by one and as a contact image: titles and
+cards readable, no card on a subject, nothing in either caption band, the packet on the named link.
+The 2D test checks the landscape bottom 18% and the portrait lower quarter stay plain paper, that
+captions change only the band, and that the same t gives the same pixels.
+
+Faults found on those frames and fixed in the starters: in the 3D template, a side card at the frame
+edge was pushed back over its subject (the planner in landscape, the worker and storage cards in
+portrait); the camera fit now measures the cards and leaves room for them inside the 5% margin
+(compared on before and after stills). In the 2D starter, an early
+cut edge was too rough on small pieces, side cards shrank the portrait subjects too far, and a card's
+tilt and shadow reached one or two pixels into the landscape band.
+
+Not checked: a real narrated passage in a style other than `diagram-3d`; a whole episode in
+`particles` or `cut-paper`; a full-length motion render of the two new looks (stills only); the other
+atlas styles the fit table marks as suited; a host pipeline's own 3D author on the changed template.
+
+## 0.8: episode mode, macOS, 2026-10-19 to 20 (Apple M4 Pro, Node 24.3, FFmpeg 7.1.1, Playwright 1.63.0, three 0.186.1)
+
+Episode mode was built after 0.7.0 and first published as part of 0.9.0; there was no separate
+0.8.0 package.
+
+`npm test` at the last episode-mode change: **72 pass, 0 fail, 0 skipped** (the forty-eight 0.7.0
+tests, twenty-four new; re-run on 2026-10-20 from that state with the same result). No 0.7 test
+changed its expectation.
+
+- `tests/facts.test.mjs` (3): a clean fact table passes and a script may cite only facts that exist;
+  each kind (claim, measured, reported, estimate, unknown) demands what the picture may say about
+  it; the exports for review, for scenes and for the publish notes' source list.
+- `tests/footage.test.mjs` (3): licences are read as the source states them, and YouTube is always
+  `unknown`; `fetch` downloads only what a person approved, plus open licences when asked; a clip
+  letterboxes 4:3, burns its source label top right and keeps normalized sound.
+- `tests/explain.test.mjs` (5): the explanation-plan check passes a worked plan and counts only
+  spoken lines; fails a plan that skipped the divergent step; makes a concept with no possible
+  demonstration say why; the markdown table names the chosen devices; the import-free checker gives
+  another tool the same verdict with its own line references.
+- `tests/episode.test.mjs` (13): caption units (Latin words and numbers whole, Chinese by
+  character) and lighting only the unit being said; alignment (the script's wording wins, the
+  speech gives the timing, misses are interpolated); one take cut halfway through the pause between
+  segments; segments rendered once and reused when unchanged, with narration laid under and
+  captions burnt in; footage covering its lines and holding its last frame; footage at another
+  frame rate keeps its speed, and only that changes the segment hash; light captions over footage;
+  footage as a rounded card beside the scene; a step tag on full-frame footage. Two of these come
+  from faults in the real run below: a millisecond-rounded duration keeps its whole frame count,
+  and two footage windows that meet between frames leave no scene frame between them.
+
+**One real episode.** A Chinese, 16:9 science explainer on the second-generation Tesla Roadster,
+made with these steps by Claude Code + Opus 5.5 in the author's environment: angle, research into
+a fact table (33 entries), a primary-source check, a script with every number cited from the
+table, footage from the maker's own verified channel only, a three.js scene, one narration take,
+alignment, render and captions. The narration was a generated voice produced outside this Skill;
+the last finishing pass (the author's caption style, channel outro) was also done outside it.
+
+- Primary sources changed the facts. The official 23-minute livestream was transcribed locally with
+  Whisper and gauges were read off its frames; four statements in secondary reports did not match
+  what was said (for example a grip figure reported as 1.26 g is 1.6 g in the livestream). Step 2
+  of `references/episode.md` now sends every number to a primary source first.
+- First cut: seven segments, per-segment alignment 97–100%, 189.7 s rendered in 4 min 48 s. The
+  author rejected the first car model as too crude; a smooth lofted body then read as soft and was
+  replaced by a faceted one, and the fourth version moved to a lofted shell with panel lines and
+  per-part materials, which is now the guidance in `references/episode.md`.
+- The narration had been generated before three script edits, so the second version had to hold
+  the picture in silence where a line had been cut. The third version re-voiced the whole script
+  after the author's six notes (the two demonstrations told separately, the exploded view narrated, the closing
+  reminders dropped, official footage beside the 3D, suction, downforce, cornering and thrust
+  animated, captions in the author's style). `align.mjs --master` was added there and checked on
+  the earlier take: all seven cut points matched the hand cuts. Six segments, 1080p, 183.7 s,
+  rendered in about 7 minutes, −16.8 LUFS integrated, −1.2 dBFS peak.
+- A fourth version kept script, voice and footage and rebuilt the scene on the 3D template's new
+  defaults (studio environment, Neutral tone mapping, contact shadow, GTAO with MSAA, clearcoat
+  materials), with a 9:16 version from the same scene file; it was later re-voiced once more after a
+  script rewrite. Overview frames every 3–4 s and zoomed key frames caught labels covering arrows
+  and cards covering the car; a frame-by-frame scan in the finishing pass caught a one-frame flash of the
+  scene where two clips met between frames and a bare frame at the end of a segment whose length
+  was rounded up. Both are fixed in `scripts/episode.mjs` and `scripts/render.mjs`, each
+  with a test. A timer frozen at 01:00 inside a sped-up livestream clip contradicted an on-screen figure and
+  was only visible in a zoomed single frame; the clip was re-cut.
+
+Not checked: a second topic, or a mechanism that is not a vehicle; English narration; a vertical
+episode built from scratch rather than from a 16:9 scene; anyone other than the author running it
+from a one-sentence request; captions and finishing done only with this Skill's own tools on the
+final version; Linux and Windows.
+
+## 0.7.0: explainer mode, macOS, 2026-10-18 (Apple M4 Pro, Node 24.3, FFmpeg 7.1.1, Playwright 1.63.0, three 0.186.1)
+
+`npm test`: **48 pass, 0 fail, 0 skipped** (the forty-three 0.6.0 tests, three new in
+`tests/excerpt.test.mjs`, two in `tests/mechanism.test.mjs`). No 0.6 test changed its expectation.
+
+`scripts/excerpt.mjs`: tested with a synthetic SRT (CRLF and BOM, a two-line cue) and a
+synthetic 12 s video. Cues crossing either edge are kept, cut and marked `clipped`; cues
+outside are dropped; the WAV is 48 kHz stereo PCM within 30 ms of the window; existing files
+are refused without `--overwrite`; a window with no cue is an error.
+
+`references/mechanism-template.html`: the example renders in both shapes from one file;
+frames keep changing; with `captions=1` the caption appears in the portrait lower quarter,
+which the delivered picture leaves plain, and nothing above it changes.
+
+**One real passage.** A 25 s window (43–68 s) of the author's own published talking-head
+video, from its final SRT and its mixed master (the narration audio keeps the music bed; no
+isolated voice track was used). The window starts and ends on half sentences, which the
+excerpt marks; the clean boundaries would be 40.43–68.14 s. Five subjects, three links,
+eleven steps, each at the start of the cue that says it. v1 and one substantive revision (v2:
+each packet carries a label in the narration's own words, so "the instruction" and "the
+result" read differently; an earlier v2 attempt, a dashed "local" zone, was dropped because
+its tag sat on the tools in landscape). Each version rendered silent 16:9 and 9:16 plus
+narrated, captioned previews: 750 frames, 25.000 s, with `--gpu` (ANGLE Metal) at 37–43 ms per
+frame, so about 30 s per file. Contact sheets of both shapes were looked at: titles readable,
+no card covering a subject, header or another card, packets on the named link at the named
+time. A first draft printed file names the narration never says; they were replaced with its
+words, and explainer.md now forbids it.
+
+A later pass (v3, same content) aligned the template with the author's own production rules
+for bright mechanism 3D: fixed colour roles with one warm accent on screen at a time, a still
+camera, no idle spinning, a 5% margin, nothing below 75% of the height in portrait and nothing
+in the bottom 18% in landscape. Measured on the delivered 9:16 clip: every frame's band below
+75% is a single flat luma value (YMIN = YMAX = 227). A test now checks the landscape band too
+and fails when the safe area is widened.
+
+Not checked: a second real passage or a different kind of mechanism; a person other than the
+author using it from a one-sentence request; a clean-context review of the clips (the
+aesthetic rules were written for promos and were not applied); dropping the inserts into a
+real edit; Linux and Windows.
 
 ## 0.6.0: brand pack v2, check and brand sheet, macOS, 2026-10-01 (Apple M4 Pro, Node 24.3, Playwright 1.63.0)
 

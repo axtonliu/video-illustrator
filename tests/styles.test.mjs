@@ -27,7 +27,7 @@ const curve = text => {
 
 async function styleNames() {
   const atlas = await readFile(refs('styles.md'), 'utf8');
-  return [...new Set([...atlas.matchAll(/\]\(([a-z-]+)\.md\)/g)].map(m => m[1]))];
+  return [...new Set([...atlas.matchAll(/\]\(([a-z0-9-]+)\.md\)/g)].map(m => m[1]))];
 }
 
 export function parseTokens(block) {
@@ -50,7 +50,7 @@ export function parseTokens(block) {
 
 test('motion tokens: every atlas style has parseable tokens whose numbers agree with each other', async () => {
   const names = await styleNames();
-  assert.equal(names.length, 25);                                   // 24 styles plus the cinematic treatment
+  assert.equal(names.length, 27);                                   // 26 styles plus the cinematic treatment
   const all = {};
   for (const name of names) {
     const block = section(await readFile(refs(`${name}.md`), 'utf8'), 'Motion tokens');
@@ -80,7 +80,7 @@ test('motion tokens: every atlas style has parseable tokens whose numbers agree 
 
 test('signature craft: every style names 2-4 media techniques, each with a number to start from', async () => {
   const names = (await styleNames()).filter(name => name !== 'cinematic');
-  assert.equal(names.length, 24);
+  assert.equal(names.length, 26);
   const required = ['cut-paper', 'ink-wash', 'pixel-art', 'editorial-motion', 'halftone-comic', 'pencil-sketch', 'rubber-hose', 'risograph', 'woodcut', 'flat-cartoon', 'isometric'];
   assert.ok(required.every(name => names.includes(name)));
   const seen = new Set();
@@ -97,6 +97,20 @@ test('signature craft: every style names 2-4 media techniques, each with a numbe
       seen.add(item);
     }
   }
+});
+
+test('explainer fit: every atlas style has one row saying whether and how it carries a mechanism', async () => {
+  const atlas = await readFile(refs('styles.md'), 'utf8');
+  const table = section(atlas, 'Carrying an explainer');
+  assert.ok(table, 'styles.md has no Carrying an explainer section');
+  const rows = table.split('\n').filter(l => /^\| `[a-z0-9-]+` \|/.test(l)).map(l => l.split('|').map(c => c.trim()));
+  const styles = (await styleNames()).filter(name => name !== 'cinematic');
+  assert.deepEqual(rows.map(r => r[1].slice(1, -1)).sort(), styles.sort(), 'one row per style, no extras');
+  for (const r of rows) {
+    assert.match(r[2], /^(3D|2D|2D or 3D)(, (default|limited))?$|^Not suited$/, `${r[1]}: fit "${r[2]}"`);
+    assert.ok(r[3].length > 20, `${r[1]}: say how, or why not`);
+  }
+  assert.equal(rows.find(r => r[1] === '`diagram-3d`')[2], '3D, default');
 });
 
 test('transitions: 7-10 forms, each with use, frames, a Canvas and a three.js recipe, and where not to use it', async () => {

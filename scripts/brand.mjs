@@ -3,7 +3,7 @@
 // names; a single v1 brand.json is still a valid pack. See references/brand.md.
 import { mkdtemp, readFile, readdir, realpath, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { cleanupSync, render } from './render.mjs';
@@ -14,6 +14,7 @@ const HELP = `Check a brand pack, or render its brand sheet.
 
 node scripts/brand.mjs --check <pack-folder | brand.json> [--tokens upstream.json]
 node scripts/brand.mjs --sheet <pack-folder | brand.json> --out sheet.png [--overwrite] [--tokens upstream.json]
+node scripts/brand.mjs --which <project-folder>
 
 --check prints JSON {ok, schema, errors, warnings} and exits 1 when there is an error.
 Errors are reserved for input that cannot be used safely: brand.json does not parse, an
@@ -26,10 +27,15 @@ rules or the forbid list is judged by the reviewer (AR-16), never here.
 "name(mode)") is looked up there and compared with the palette value (warning on mismatch).
 --sheet runs the check, refuses on errors, then renders one PNG (1920 wide) with the palette,
 type scale, motifs, accent do and don't, motion and the forbid list, plus the end card
-template when the pack has one. It uses scripts/render.mjs (Playwright Chromium).`;
+template when the pack has one. It uses scripts/render.mjs (Playwright Chromium).
+--which prints {source, pack}: the pack a project uses. <project>/inputs/brand first; without it
+the user's default pack, $VIDEO_ILLUSTRATOR_BRAND if set (exit 1 when it does not exist), else
+~/.config/video-illustrator/brand/ when it exists; else source "none".
+rules_docs (v2) lists the user's own rule documents (absolute, ~/ or pack-relative paths); the
+author reads them live before designing. A listed file that does not exist is an error.`;
 
 const V1_FIELDS = ['display_name', 'palette', 'fonts', 'logo', 'making_of'];
-const V2_FIELDS = ['schema', 'palette_sources', 'palette_scope', 'accent_rules', 'type_scale', 'motion', 'motifs', 'sound', 'endcard', 'forbid', 'references'];
+const V2_FIELDS = ['schema', 'palette_sources', 'palette_scope', 'accent_rules', 'type_scale', 'motion', 'motifs', 'sound', 'endcard', 'forbid', 'references', 'rules_docs'];
 const PALETTE_ROLES = { v1: ['primary', 'accent', 'ground', 'ink'], v2: ['ground', 'surface', 'ink', 'ink_secondary', 'primary', 'accent'] };
 const FILM_REQUIRED = ['ground', 'ink', 'accent'];
 const FONT_ROLES = { v1: ['display', 'body'], v2: ['display', 'body', 'mono'] };
@@ -146,6 +152,7 @@ export async function checkBrand(target, { tokens } = {}) {
 
   // Files the pack names. Missing files are errors; paths leaving the pack are warnings.
   const files = [];
+  const rulesDocs = [];
   const needFile = async (field, relative, { directory = false } = {}) => {
     if (!isText(relative)) { warn('path_invalid', field, `${field} must be a relative path string`); return null; }
     const full = path.resolve(dir, relative);
@@ -321,9 +328,38 @@ export async function checkBrand(target, { tokens } = {}) {
         for (const key of ['url', 'learn', 'avoid']) if (!isObject(ref) || !isText(ref[key])) warn('references_invalid', `references[${k}].${key}`, `references[${k}].${key} is missing`);
       });
     }
+
+    // rules_docs: the user's own rule documents, read live (never copied), so they may sit anywhere.
+    if ('rules_docs' in brand) {
+      if (!Array.isArray(brand.rules_docs)) warn('rules_docs_invalid', 'rules_docs', 'rules_docs must be a list of paths to documents the author reads before designing');
+      else for (const [k, doc] of brand.rules_docs.entries()) {
+        const field = `rules_docs[${k}]`;
+        if (!isText(doc)) { warn('path_invalid', field, `${field} must be a path string`); continue; }
+        const full = doc.startsWith('~/') ? path.join(homedir(), doc.slice(2)) : path.resolve(dir, doc);
+        const found = await kind(full);
+        if (!found) { error('file_missing', field, `${field} names ${doc}, which does not exist`); continue; }
+        if (found !== 'file') { warn('path_invalid', field, `${field} must be a file`); continue; }
+        rulesDocs.push(full);
+        files.push({ field, path: await realpath(full) });
+      }
+    }
   }
 
-  return { ...result(), brand, scope, files };
+  return { ...result(), brand, scope, files, rules_docs: rulesDocs };
+}
+
+// The pack a project uses: its own inputs/brand, else the user's default pack.
+export async function findBrandPack(project, { env = process.env, home = homedir() } = {}) {
+  const own = path.resolve(project, 'inputs/brand');
+  if (await kind(own)) return { source: 'project', pack: own };
+  if (isText(env.VIDEO_ILLUSTRATOR_BRAND)) {
+    const set = path.resolve(env.VIDEO_ILLUSTRATOR_BRAND);
+    if (!(await kind(set))) throw Error(`VIDEO_ILLUSTRATOR_BRAND names ${set}, which does not exist`);
+    return { source: 'env', pack: set };
+  }
+  const user = path.join(home, '.config/video-illustrator/brand');
+  if (await kind(user)) return { source: 'user', pack: user };
+  return { source: 'none', pack: null };
 }
 
 function checkMotion(motion, warn) {
@@ -418,6 +454,7 @@ export function sheetHtml({ brand, scope, packName, hasEndcard, motifSvgs }) {
   const rules = isObject(brand.accent_rules) ? brand.accent_rules : {};
   const motion = isObject(brand.motion) ? brand.motion : {};
   const forbid = Array.isArray(brand.forbid) ? brand.forbid : [];
+  const rulesDocs = Array.isArray(brand.rules_docs) ? brand.rules_docs.filter(isText) : [];
   const sources = isObject(brand.palette_sources) ? brand.palette_sources : {};
   const name = isText(brand.display_name) ? brand.display_name : '(no display_name)';
   const sampleLine = isText(brand.making_of) ? brand.making_of : 'Body copy 正文示例 0123456789';
@@ -543,7 +580,7 @@ ${budget ? `<div class="mono dim budget">${esc(budget)}</div>` : ''}
 
 <div class="bottom">
   <div><h2>Motion · 30 fps</h2><div class="curves">${curve('in', ease.in)}${curve('out', ease.out)}</div>${motionRows}</div>
-  <div class="forbid"><h2>Forbid</h2>${forbid.length ? `<ul>${forbid.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : '<div class="mono dim">nothing listed</div>'}</div>
+  <div class="forbid"><h2>Forbid</h2>${forbid.length ? `<ul>${forbid.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : '<div class="mono dim">nothing listed</div>'}${rulesDocs.length ? `<div class="mono dim">Read before designing: ${rulesDocs.map(d => esc(path.basename(d))).join(' · ')}</div>` : ''}</div>
 </div>
 <script>
 window.renderFrame = async () => {
@@ -624,11 +661,11 @@ function parse(argv) {
     const arg = argv[i];
     if (arg === '--help') return null;
     if (arg === '--overwrite') { opts.overwrite = true; continue; }
-    if (!['--check', '--sheet', '--out', '--tokens'].includes(arg)) throw Error(`Unknown option: ${arg}`);
+    if (!['--check', '--sheet', '--out', '--tokens', '--which'].includes(arg)) throw Error(`Unknown option: ${arg}`);
     if (argv[i + 1] === undefined || argv[i + 1].startsWith('--')) throw Error(`Missing value for ${arg}`);
     opts[arg.slice(2)] = argv[++i];
   }
-  if (Boolean(opts.check) === Boolean(opts.sheet)) throw Error('Use exactly one of --check or --sheet. Use --help.');
+  if ([opts.check, opts.sheet, opts.which].filter(Boolean).length !== 1) throw Error('Use exactly one of --check, --sheet or --which. Use --help.');
   if (opts.sheet && !opts.out) throw Error('--sheet needs --out sheet.png.');
   return opts;
 }
@@ -640,7 +677,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(await realpath(process.
     if (!opts) console.log(HELP);
     else {
       const tokens = opts.tokens ? JSON.parse(await readFile(path.resolve(opts.tokens), 'utf8')) : undefined;
-      if (opts.check) {
+      if (opts.which) console.log(JSON.stringify(await findBrandPack(opts.which), null, 2));
+      else if (opts.check) {
         const { brand, files, scope, ...report } = await checkBrand(opts.check, { tokens });
         for (const e of report.errors) console.error(`Error: ${e.code} ${e.field}: ${e.message}`);
         for (const w of report.warnings) console.error(`Warning: ${w.code} ${w.field}: ${w.message}`);

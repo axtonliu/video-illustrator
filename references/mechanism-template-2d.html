@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>video-illustrator 2D mechanism starter</title>
+<!--
+  2D-route twin of mechanism-template.html for scripts/render.mjs (see references/explainer.md).
+  Same content contract: FILM, SUBJECTS, LINKS, STEPS and CUES are written exactly as in the 3D
+  template and can be pasted between the two files (pos and bend are read as x, y; z is ignored).
+  Same fixed rules: one scene renders 16:9 and 9:16, subjects are fitted into the frame's safe
+  area, everything stays inside a 5% margin, nothing but paper below 75% of the height in portrait
+  or in the bottom 18% in landscape, labels are flat cards, one change per step, nothing moves for
+  decoration. Every value is a function of t; all randomness is seeded.
+  Copy it next to the project as scene.html. Edit section 1 for the content. The look lives in
+  PALETTE, MOTION (copied from the chosen style file's Motion tokens) and section 3 (the style's
+  signature craft). As shipped, section 3 is cut paper (references/cut-paper.md): pieces with a
+  seeded cut edge, grain anchored to the piece, a lift shadow, poses on 2s. For another 2D style,
+  replace PALETTE, MOTION and the drawing functions in section 3; keep sections 2, 4 and 5.
+  Query options: captions=1 burns the CUES at the bottom for a preview, grid=1 draws the safe area.
+-->
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--paper)}
+  canvas{display:block;position:absolute;inset:0}
+  #ui{position:absolute;inset:0;pointer-events:none;font-family:"PingFang SC","Hiragino Sans GB","Noto Sans CJK SC","Source Han Sans SC",system-ui,sans-serif;color:var(--ink)}
+  .card{position:absolute;background:var(--card);border-radius:.12em;padding:.48em 1.25em .54em;box-shadow:0 .07em .1em rgba(58,40,24,.3);white-space:nowrap;text-align:center}
+  .card b{display:block;font-weight:700;letter-spacing:.02em}
+  .card span{display:block;color:var(--sub);font-size:.62em;margin-top:.25em}
+  /* The active card: its accent is a small dot in the left padding (the title stays centred and
+     nothing shifts) and a deeper lift. Never a stripe on one side of the card or an accent outline
+     (aesthetic-rules.md AR-17). */
+  .card b{position:relative}
+  .card.on b::before{content:"";position:absolute;left:-.75em;top:50%;width:.4em;height:.4em;margin-top:-.2em;border-radius:50%;background:var(--accent)}
+  .card.on{box-shadow:0 .2em .35em rgba(58,40,24,.22)}
+  #payload{position:absolute;transform:translate(-50%,-100%);background:var(--ink);color:var(--card);border-radius:.1em;padding:.18em .5em;font-size:.55em;font-weight:600;white-space:nowrap}
+  #head{position:absolute}
+  #kicker{color:var(--sub);letter-spacing:.14em;font-size:.42em;margin-bottom:.35em}
+  #title{font-weight:800;letter-spacing:.01em;line-height:1.15}
+  #caption{position:absolute;left:0;right:0;text-align:center;font-weight:600}
+  #grid{position:absolute;border:2px dashed rgba(200,40,40,.6);display:none}
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div id="ui"><div id="payload"></div><div id="head"><div id="kicker"></div><div id="title"></div></div><div id="caption"></div><div id="grid"></div></div>
+<script>
+// 1. Content: edit this section (same contract as mechanism-template.html) ---------------
+const FILM = { duration: 12, kicker: 'HOW IT WORKS' };
+// Colour roles as in the 3D template: paper, ink, one structure colour, a light secondary for
+// links and minor parts, one warm accent for the single place changing now. Cut paper: a warm
+// kraft desk, a family of paper colours, brick red as the only accent.
+const PALETTE = {
+  paper: '#E9DDC7', ink: '#3A3532', sub: '#6E6259', accent: '#C4553E', card: '#F8F2E4',
+  structure: '#2B3A55', structureDark: '#1E2A40', secondary: '#3C8C88', light: '#E0A33B', screen: '#F8F2E4'
+};
+// Motion tokens copied from the style file (cut-paper.md, 30 fps).
+const MOTION = { cadence: 15, enter: 12, exit: 9, easeIn: [0.3, 1.15, 0.45, 1.06], easeOut: [0.6, 0, 0.9, 0.5] };
+const SUBJECTS = [
+  { id: 'planner', shape: 'orb', title: 'Planner', note: 'decides the next step',
+    pos: { landscape: [-3.4, 1.5, 0], portrait: [0, 3.2, 0] }, label: { landscape: 'left', portrait: 'right' } },
+  { id: 'worker', shape: 'gear', title: 'Worker', note: 'runs the step',
+    pos: { landscape: [0.2, 0, 0.4], portrait: [-1.3, 0, 0.4] }, label: { landscape: 'below', portrait: 'left' } },
+  { id: 'store', shape: 'folder', title: 'Storage', note: 'keeps the files',
+    pos: { landscape: [3.4, 0, 0], portrait: [1.5, -1.9, 0] }, label: { landscape: 'below', portrait: 'right' } }
+];
+const LINKS = [
+  { id: 'ask', from: 'planner', to: 'worker', bend: { landscape: [0, 0.6, 0.6], portrait: [-1.2, 0.2, 0.6] } },
+  { id: 'back', from: 'worker', to: 'planner', bend: { landscape: [0.2, -0.4, 1.2], portrait: [0.9, 0.4, 1.0] } },
+  { id: 'save', from: 'worker', to: 'store', bend: { landscape: [0, 0.5, 0.4], portrait: [0.2, -0.2, 0.8] } }
+];
+const STEPS = [
+  { at: 0.0, title: 'Three parts, three jobs', focus: ['planner', 'worker', 'store'] },
+  { at: 2.0, title: 'The planner decides', focus: ['planner'], send: { link: 'ask', dur: 1.4, label: 'next step' } },
+  { at: 4.5, title: 'The worker runs it', focus: ['worker'] },
+  { at: 6.5, title: 'The result comes back', focus: ['planner'], send: { link: 'back', dur: 1.3 } },
+  { at: 9.0, title: 'Then it is saved', focus: ['store'], send: { link: 'save', dur: 1.2 } }
+];
+const CUES = [];
+
+// 2. Setup: frame, safe area, fit (keep) ----------------------------------------------------
+const query = new URLSearchParams(location.search);
+const VI = window.videoIllustrator || { fps: 30, width: innerWidth, height: innerHeight };
+const W = VI.width, H = VI.height, ASPECT = W >= H ? 'landscape' : 'portrait';
+const SAFE = ASPECT === 'landscape' ? { top: 0.24, bottom: 0.72, left: 0.06, right: 0.94 } : { top: 0.17, bottom: 0.66, left: 0.06, right: 0.94 };
+const LABEL_BOTTOM = ASPECT === 'landscape' ? 0.82 : 0.75;
+const U = Math.min(W, H) / 720;
+for (const [key, value] of Object.entries(PALETTE)) document.documentElement.style.setProperty('--' + key, value);
+const canvas = document.getElementById('stage');
+canvas.width = W; canvas.height = H;
+const ctx = canvas.getContext('2d');
+
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let r = Math.imul(seed ^ seed >>> 15, 1 | seed); r = r + Math.imul(r ^ r >>> 7, 61 | r) ^ r; return ((r ^ r >>> 14) >>> 0) / 4294967296; }; }
+const hash = s => [...s].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), 2166136261);
+function cubicBezier(x1, y1, x2, y2) {
+  const f = (a, b, u) => 3 * a * (1 - u) ** 2 * u + 3 * b * (1 - u) * u * u + u ** 3;
+  return x => { x = Math.min(1, Math.max(0, x)); let lo = 0, hi = 1; for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (f(x1, x2, m) < x) lo = m; else hi = m; } return f(y1, y2, (lo + hi) / 2); };
+}
+const easeIn = cubicBezier(...MOTION.easeIn), easeOut = cubicBezier(...MOTION.easeOut);
+const ease = x => { x = Math.min(1, Math.max(0, x)); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const step = t => MOTION.cadence ? Math.floor(t * MOTION.cadence + 1e-6) / MOTION.cadence : t;
+
+// World x, y (y up) from the content are fitted into SAFE, so a subject list written for the 3D
+// template lands in the same arrangement here. The fit also makes room beside each subject for a
+// left or right card, so no card is pushed back over its subject. R is a subject's drawn radius in
+// world units. layout() runs on the first frame, after the fonts have loaded and cards can be measured.
+const R = 0.75;
+const box = { l: SAFE.left * W, r: SAFE.right * W, t: SAFE.top * H, b: SAFE.bottom * H };
+let S = 0, cx0 = 0, cy0 = 0, radius = 0;
+const toScreen = ([x, y]) => [cx0 + x * S, cy0 - y * S];
+
+// 3. Craft: the style's signature techniques (cut paper as shipped; replace per 2D style) -------
+// A piece is a polygon in its own coordinates. Its cut edge is jittered once per piece (seeded,
+// fixed for its life), grain is drawn in the piece's own space so it travels with it, and its
+// shadow grows from rest (2 px offset, 3 px blur, 30%) to lifted (8 px, 12 px, 20%).
+const grain = (() => {
+  const g = document.createElement('canvas'); g.width = g.height = 128;
+  const c = g.getContext('2d'), img = c.createImageData(128, 128), rand = rng(11);
+  for (let i = 0; i < img.data.length; i += 4) { const v = 128 + (rand() - 0.5) * 255; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+  c.putImageData(img, 0, 0);
+  return g;
+})();
+const circle = (r, n = 48) => Array.from({ length: n }, (_, i) => [Math.cos(i / n * 2 * Math.PI) * r, Math.sin(i / n * 2 * Math.PI) * r]);
+const rect = (x, y, w, h, n = 6) => { const pts = []; for (let i = 0; i < n; i++) pts.push([x + w * i / n, y]); for (let i = 0; i < n; i++) pts.push([x + w, y + h * i / n]); for (let i = 0; i < n; i++) pts.push([x + w - w * i / n, y + h]); for (let i = 0; i < n; i++) pts.push([x, y + h - h * i / n]); return pts; };
+function gearPoly(r, teeth) { const pts = []; for (let i = 0; i < teeth * 2; i++) { const a0 = i / (teeth * 2) * 2 * Math.PI, a1 = (i + 1) / (teeth * 2) * 2 * Math.PI, rr = i % 2 ? r * 0.78 : r; pts.push([Math.cos(a0) * rr, Math.sin(a0) * rr], [Math.cos(a1) * rr, Math.sin(a1) * rr]); } return pts; }
+// Contour jitter of 1.5-3 px at 1280 wide (cut-paper.md), scaled down for small pieces.
+const cut = (poly, seed, size) => {
+  const rand = rng(seed), j = (1.5 + rand() * 1.5) * U * Math.min(1, size / (40 * U)) * 0.5, n = poly.length, every = n > 12 ? 4 : 1;
+  const knots = Array.from({ length: Math.ceil(n / every) }, () => [(rand() - 0.5) * 2 * j, (rand() - 0.5) * 2 * j]);
+  return poly.map(([x, y], i) => { const k = i / every, a = knots[Math.floor(k) % knots.length], b = knots[(Math.floor(k) + 1) % knots.length], f = k - Math.floor(k); return [x + a[0] + (b[0] - a[0]) * f, y + a[1] + (b[1] - a[1]) * f]; });
+};
+const extent = poly => Math.max(...poly.map(([x, y]) => Math.hypot(x, y)));
+function piece({ x, y, rot = 0, polys, fill, lift = 0, seed }) {
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(rot);
+  const path = new Path2D();
+  polys.forEach((poly, k) => { cut(poly, seed + k * 101, extent(poly)).forEach(([px, py], i) => i ? path.lineTo(px, py) : path.moveTo(px, py)); path.closePath(); });
+  ctx.shadowColor = `rgba(58,40,24,${0.30 - 0.10 * lift})`;
+  ctx.shadowOffsetY = (2 + 6 * lift) * U; ctx.shadowOffsetX = (1 + 2 * lift) * U; ctx.shadowBlur = (3 + 9 * lift) * U;
+  ctx.fillStyle = fill; ctx.fill(path, 'evenodd');
+  ctx.shadowColor = 'transparent';
+  ctx.clip(path, 'evenodd');
+  ctx.globalAlpha = 0.06; ctx.globalCompositeOperation = 'multiply';
+  ctx.drawImage(grain, -256 * U, -256 * U, 512 * U, 512 * U);
+  ctx.restore();
+}
+// Shapes draw at (x, y) with radius r; on = the accent marks this one; spin = an angle; lift 0..1.
+const SHAPES = {
+  orb(s, x, y, r, { on, spin, lift }) {
+    piece({ x, y: y + r * 0.78, polys: [rect(-r * 0.75, -r * 0.1, r * 1.5, r * 0.22)], fill: PALETTE.structureDark, lift: 0, seed: s.seed + 1 });
+    piece({ x, y, polys: [circle(r * 0.72)], fill: on ? PALETTE.accent : PALETTE.structure, lift, seed: s.seed + 2 });
+    piece({ x: x - r * 0.2, y: y - r * 0.2, rot: spin * 0.2, polys: [circle(r * 0.3, 28)], fill: PALETTE.card, lift, seed: s.seed + 3 });
+  },
+  gear(s, x, y, r, { on, spin, lift }) {
+    const fill = on ? PALETTE.accent : PALETTE.structure;
+    piece({ x: x + r * 0.62, y: y + r * 0.38, rot: -spin * 1.5 + 0.2, polys: [gearPoly(r * 0.42, 8), circle(r * 0.14, 20)], fill: PALETTE.secondary, lift, seed: s.seed + 4 });
+    piece({ x: x - r * 0.12, y: y - r * 0.08, rot: spin, polys: [gearPoly(r * 0.7, 12), circle(r * 0.24, 24)], fill, lift, seed: s.seed + 5 });
+  },
+  folder(s, x, y, r, { on, lift }) {
+    const fill = on ? PALETTE.accent : PALETTE.structure;
+    piece({ x, y, polys: [rect(-r * 0.85, -r * 0.55, r * 1.7, r * 1.2)], fill, lift, seed: s.seed + 6 });
+    piece({ x: x - r * 0.55, y: y - r * 0.62, polys: [rect(-r * 0.3, -r * 0.13, r * 0.6, r * 0.2)], fill, lift, seed: s.seed + 7 });
+    piece({ x: x + r * 0.05, y: y + r * 0.12, rot: -0.04, polys: [rect(-r * 0.86, -r * 0.4, r * 1.72, r * 0.86)], fill: PALETTE.light, lift, seed: s.seed + 8 });
+  },
+  device(s, x, y, r, { on, lift, screen }) {
+    piece({ x, y: y + r * 0.62, polys: [rect(-r * 1.0, -r * 0.08, r * 2.0, r * 0.2)], fill: on ? PALETTE.accent : PALETTE.structure, lift, seed: s.seed + 9 });
+    piece({ x, y: y - r * 0.1, polys: [rect(-r * 0.85, -r * 0.62, r * 1.7, r * 1.18)], fill: PALETTE.structureDark, lift, seed: s.seed + 10 });
+    piece({ x, y: y - r * 0.1, polys: [rect(-r * 0.74, -r * 0.52, r * 1.48, r * 0.98)], fill: PALETTE.screen, lift, seed: s.seed + 11 });
+    ctx.save(); ctx.fillStyle = PALETTE.ink; ctx.textBaseline = 'top';
+    (screen || []).slice(0, 4).forEach((line, i) => { ctx.font = `${i ? 400 : 700} ${(i ? 0.15 : 0.19) * r}px Menlo, "PingFang SC", monospace`; ctx.fillText(line, x - r * 0.64, y - r * 0.52 + r * 0.08 + i * r * 0.22, r * 1.3); });
+    ctx.restore();
+  },
+  doc(s, x, y, r, { on, lift }) {
+    piece({ x, y, rot: -0.03, polys: [[[-r * 0.5, -r * 0.7], [r * 0.25, -r * 0.7], [r * 0.5, -r * 0.45], [r * 0.5, r * 0.7], [-r * 0.5, r * 0.7]]], fill: PALETTE.card, lift, seed: s.seed + 12 });
+    for (let i = 0; i < 4; i++) piece({ x: x - (i === 3 ? r * 0.08 : 0), y: y - r * 0.32 + i * r * 0.24, rot: -0.03, polys: [rect(-r * 0.32 + (i === 3 ? 0 : 0), -r * 0.04, r * (i === 3 ? 0.48 : 0.64), r * 0.08)], fill: on ? PALETTE.accent : PALETTE.structure, lift, seed: s.seed + 13 + i });
+  },
+  block(s, x, y, r, { on, lift }) {
+    piece({ x, y, polys: [rect(-r * 0.6, -r * 0.45, r * 1.2, r * 1.05)], fill: on ? PALETTE.accent : PALETTE.structure, lift, seed: s.seed + 18 });
+    piece({ x, y: y - r * 0.45, polys: [[[-r * 0.6, 0], [-r * 0.35, -r * 0.25], [r * 0.85, -r * 0.25], [r * 0.6, 0]]], fill: PALETTE.secondary, lift, seed: s.seed + 19 });
+  }
+};
+// A link is a perforated paper strip: short cut dashes along the curve and a cut arrow head.
+function drawLink(l, active) {
+  const fill = active ? PALETTE.structureDark : PALETTE.secondary, gap = 15 * U;
+  for (let d = gap / 2; d < l.len - 18 * U; d += gap) {
+    const [x, y, a] = l.at(d / l.len);
+    piece({ x, y, rot: a, polys: [rect(-4.5 * U, -2.2 * U, 9 * U, 4.4 * U, 1)], fill, seed: l.seed + Math.round(d) });
+  }
+  const [x, y, a] = l.at(1);
+  piece({ x, y, rot: a, polys: [[[2 * U, 0], [-16 * U, -8 * U], [-12 * U, 0], [-16 * U, 8 * U]]], fill, seed: l.seed + 7 });
+}
+function drawPacket(x, y, flightLift) {
+  piece({ x, y, polys: [circle(11 * U, 24)], fill: PALETTE.accent, lift: flightLift, seed: 909 });
+}
+function drawBackground() {
+  ctx.fillStyle = PALETTE.paper; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.globalAlpha = 0.025; ctx.globalCompositeOperation = 'multiply';
+  for (let y = 0; y < H; y += 512 * U) for (let x = 0; x < W; x += 512 * U) ctx.drawImage(grain, x, y, 512 * U, 512 * U);
+  ctx.restore();
+}
+
+// 4. Build nodes, links and the UI (keep) ----------------------------------------------------
+const ui = document.getElementById('ui');
+ui.style.fontSize = (30 * U) + 'px';
+const nodes = new Map();
+for (const s of SUBJECTS) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = '<b></b><span></span>';
+  card.querySelector('b').textContent = s.title;
+  if (s.note) card.querySelector('span').textContent = s.note; else card.querySelector('span').remove();
+  if (s.card === false) card.style.display = 'none';
+  const seed = hash(s.id) >>> 8;
+  card.style.transform = `translate(-50%,-50%) rotate(${(rng(seed)() - 0.5) * 2}deg)`;
+  ui.appendChild(card);
+  nodes.set(s.id, { ...s, seed, card });
+}
+const links = new Map();
+function layout() {
+  const ys = SUBJECTS.map(s => s.pos[ASPECT][1]), minY = Math.min(...ys) - R, maxY = Math.max(...ys) + R;
+  const span = scale => {
+    let lo = Infinity, hi = -Infinity;
+    for (const n of nodes.values()) {
+      const x = n.pos[ASPECT][0] * scale, r = R * scale, side = n.label?.[ASPECT] || 'below', cw = n.card.style.display === 'none' ? 0 : n.card.offsetWidth;
+      lo = Math.min(lo, x - r - (side === 'left' ? 14 * U + cw : 0), side === 'below' || side === 'above' ? x - cw / 2 : Infinity);
+      hi = Math.max(hi, x + r + (side === 'right' ? 14 * U + cw : 0), side === 'below' || side === 'above' ? x + cw / 2 : -Infinity);
+    }
+    return [lo, hi];
+  };
+  let a = 1, b = Math.min(150 * U, (box.b - box.t) / (maxY - minY + 0.6));
+  const room = W * 0.9; // cards may reach the 5% frame margin; subjects stay in SAFE
+  if (span(b)[1] - span(b)[0] <= room) a = b;
+  else for (let i = 0; i < 40; i++) { const m = (a + b) / 2; if (span(m)[1] - span(m)[0] <= room) a = m; else b = m; }
+  S = a; radius = R * S;
+  const [lo, hi] = span(S);
+  cx0 = W / 2 - (lo + hi) / 2;
+  cy0 = (box.t + box.b) / 2 + S * (minY + maxY) / 2;
+  for (const n of nodes.values()) n.home = toScreen(n.pos[ASPECT]);
+  for (const l of LINKS) {
+    const [ax, ay] = nodes.get(l.from).home, [bx, by] = nodes.get(l.to).home, bend = l.bend?.[ASPECT] || [0, 0.5];
+    const mx = (ax + bx) / 2 + bend[0] * S, my = (ay + by) / 2 - bend[1] * S;
+    const q = u => [(1 - u) ** 2 * ax + 2 * (1 - u) * u * mx + u * u * bx, (1 - u) ** 2 * ay + 2 * (1 - u) * u * my + u * u * by];
+    // Trim the curve to the subjects' edges and sample it by length, so packets travel evenly.
+    const raw = Array.from({ length: 201 }, (_, i) => q(i / 200));
+    const keep = raw.filter(([x, y]) => Math.hypot(x - ax, y - ay) > radius * 1.05 && Math.hypot(x - bx, y - by) > radius * 1.15);
+    const cum = [0]; for (let i = 1; i < keep.length; i++) cum.push(cum[i - 1] + Math.hypot(keep[i][0] - keep[i - 1][0], keep[i][1] - keep[i - 1][1]));
+    const len = cum.at(-1);
+    const at = u => { const d = u * len; let i = cum.findIndex(c => c >= d); if (i < 1) i = 1; const k = (d - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1); const [x0, y0] = keep[i - 1], [x1, y1] = keep[i]; return [x0 + (x1 - x0) * k, y0 + (y1 - y0) * k, Math.atan2(y1 - y0, x1 - x0)]; };
+    links.set(l.id, { ...l, len, at, seed: hash(l.id) >>> 8 });
+  }
+}
+const head = document.getElementById('head'), kicker = document.getElementById('kicker'), titleEl = document.getElementById('title');
+head.style.left = (ASPECT === 'landscape' ? 0.055 : 0.07) * W + 'px';
+head.style.top = (ASPECT === 'landscape' ? 0.07 : 0.055) * H + 'px';
+head.style.maxWidth = (ASPECT === 'landscape' ? 0.7 : 0.86) * W + 'px';
+titleEl.style.fontSize = (ASPECT === 'landscape' ? 1.55 : 1.45) + 'em';
+kicker.textContent = FILM.kicker;
+const caption = document.getElementById('caption');
+caption.style.bottom = (ASPECT === 'landscape' ? 0.05 : 0.14) * H + 'px';
+caption.style.fontSize = '0.95em';
+if (query.get('grid') === '1') Object.assign(document.getElementById('grid').style, { display: 'block', left: box.l + 'px', top: box.t + 'px', width: box.r - box.l + 'px', height: box.b - box.t + 'px' });
+const payload = document.getElementById('payload');
+
+const stepAt = t => { let i = 0; STEPS.forEach((s, k) => { if (s.at <= t) i = k; }); return i; };
+const focusTime = (id, t) => STEPS.reduce((acc, s, k) => {
+  if (!(s.focus || []).includes(id)) return acc;
+  const end = k + 1 < STEPS.length ? STEPS[k + 1].at : FILM.duration;
+  return acc + Math.max(0, Math.min(t, end) - s.at);
+}, 0);
+const LABEL_PUSH = { below: [0, 1], above: [0, -1], left: [-1, 0], right: [1, 0] };
+
+// 5. Frame (keep) ------------------------------------------------------------------------------
+window.renderFrame = async time => {
+  if (!S) { await document.fonts.ready; layout(); }
+  const t = step(time); // drawn poses on the style's cadence
+  const k = stepAt(t), current = STEPS[k], prev = STEPS[k - 1], since = t - current.at;
+  titleEl.textContent = current.title;
+  let carrier = null;
+  for (let i = k; i >= 0 && !carrier; i--) if (STEPS[i].send) carrier = STEPS[i];
+  const flight = carrier ? (t - carrier.at) / carrier.send.dur : Infinity;
+  const accentOne = (current.focus || []).length === 1 && !(flight < 1);
+  const enterS = MOTION.enter / 30;
+
+  drawBackground();
+  for (const l of links.values()) drawLink(l, carrier && flight < 1.6 && carrier.send.link === l.id);
+  const placed = [];
+  for (const n of nodes.values()) {
+    const on = (current.focus || []).includes(n.id), wasOn = prev && (prev.focus || []).includes(n.id);
+    const blend = on === Boolean(wasOn) ? 1 : (on ? easeIn : x => 1 - easeOut(1 - x))(since / enterS);
+    const lift = on ? blend : wasOn ? 1 - blend : 0;
+    const spawnStep = STEPS.findIndex(s => (s.spawn || []).includes(n.id));
+    const visible = spawnStep < 0 ? 1 : easeIn((t - STEPS[spawnStep].at) / enterS);
+    if (visible > 0.001) {
+      const [x, y] = n.home, r = radius * Math.max(0.001, visible);
+      const screen = n.shape === 'device' ? (STEPS.slice(0, k + 1).reverse().find(s => s.screen) || { screen: [n.title] }).screen : null;
+      SHAPES[n.shape](n, x, y - lift * 6 * U, r, { on: on && accentOne, spin: 1.2 * focusTime(n.id, t), lift, screen });
+    }
+    // Card placement as in the 3D template: beside the subject, inside the margin, below the header, never on another card.
+    const [x, y] = n.home, dir = LABEL_PUSH[n.label?.[ASPECT] || 'below'];
+    const reach = radius + 14 * U;
+    const cw = n.card.offsetWidth / 2, ch = n.card.offsetHeight / 2, margin = Math.max(18 * U, 0.05 * W);
+    const minTop = head.offsetTop + head.offsetHeight + margin + ch;
+    const clampX = v => Math.min(W - margin - cw, Math.max(margin + cw, v));
+    let cx = clampX(x + dir[0] * (reach + cw));
+    const cy = Math.min(LABEL_BOTTOM * H - ch - 5 * U, Math.max(minTop, y + dir[1] * (reach * 0.9 + ch))); // 5 px for the tilt and shadow
+    for (const p of placed) if (Math.abs(cy - p.cy) < ch + p.ch + 6 * U && Math.abs(cx - p.cx) < cw + p.cw + 6 * U) cx = clampX(cx >= p.cx ? p.cx + p.cw + cw + 10 * U : p.cx - p.cw - cw - 10 * U);
+    if (n.card.style.display !== 'none') placed.push({ cx, cy, cw, ch });
+    n.card.style.left = cx + 'px'; n.card.style.top = cy + 'px';
+    n.card.style.opacity = visible;
+    n.card.classList.toggle('on', on && accentOne);
+  }
+  payload.style.opacity = 0;
+  if (carrier && flight <= 1.05) {
+    const [px, py] = links.get(carrier.send.link).at(ease(Math.min(1, flight)));
+    const flightLift = Math.sin(Math.PI * Math.min(1, flight));
+    drawPacket(px, py - flightLift * 6 * U, flightLift);
+    if (carrier.send.label) {
+      payload.textContent = carrier.send.label;
+      payload.style.left = px + 'px'; payload.style.top = py - 18 * U + 'px';
+      payload.style.opacity = Math.min(ease(flight / 0.15), ease((1.05 - flight) / 0.15));
+    }
+  }
+  titleEl.style.opacity = k === 0 ? easeIn(t / enterS) : easeIn(since / enterS);
+  titleEl.style.transform = `translateY(${(1 - easeIn(since / enterS)) * 10 * U}px)`;
+  const cue = query.get('captions') === '1' ? CUES.find(c => c.start <= time && time < c.end) : null;
+  caption.textContent = cue ? cue.text : '';
+};
+window.sceneInfo = { aspect: ASPECT, duration: FILM.duration, subjects: SUBJECTS.length, steps: STEPS.length, route: '2d' };
+</script>
+</body>
+</html>

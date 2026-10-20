@@ -224,9 +224,37 @@ Toronto date and the worklog that records them (`2026-09-27-2215-video-illustrat
   spots are there (against `per_frame`), and does the accent cover more than `max_area`? Is it
   in one of `forms`, or does it show a `never` treatment (metallic, gradient, glow, bevel,
   glitter)? Does any frame show something on `forbid`? Do the title, credit and end-card type
-  match the brand fonts and sit near the `type_scale` sizes? No brand pack given: `–`.
+  match the brand fonts and sit near the `type_scale` sizes? Does any frame break a rule in the
+  documents listed in `rules_docs`? No brand pack given: `–`.
 - **Fix.** Remove the extra accent or move it into ink; replace the forbidden treatment with
   one of the allowed forms (a flat line instead of a glow); reset type to the brand fonts and
   the nearest scale step. Record any instruction from the user that overrides the pack in
   `brief.md`.
 - **Seen in.** stills, sheet, brief.
+
+## AR-17 Cards and labels without the AI default look
+
+- **Rule.** A card or label is a quiet, well-made object: generous padding, a clear two-level
+  hierarchy (a heavy title, a lighter note in the secondary ink), a plain surface lifted by a soft
+  shadow or a hairline border, corners that suit the style. The accent marks the one thing that
+  matters on it, as a small dot, badge, number or key word, or as the leader's end on the subject;
+  it never paints the card's frame. Never put a coloured stripe on one side of a card container
+  (any side, as a border or an inset shadow), and never give each card its own stripe colour.
+  Allowed: neutral structural dividers inside a card, and a quiet emphasis line beside a quotation
+  inside a card (blockquote style). The rest of that family is out too: an accent outline around
+  the active card, emoji as icons, glass blur, glowing edges, a gradient that means nothing. They
+  read as generated, not designed.
+- **Case.** 2026-10-20, the Roadster structure in three styles (diagram-3d, particles, cut-paper):
+  the active label cards carried an accent stripe down their left edge, inherited from the 2D
+  mechanism starter. Axton rejected it (translated): every AI does this, it is the treatment he
+  dislikes most, and cards should be modern, confident and generous instead. His standing rule
+  since 2026-07-06: “任何卡片都不要有这种单边的彩色边！这就是典型 AI 效果”.
+- **Check.** In the stills: does any card or label show a coloured edge on one side, an accent
+  outline around its frame, emoji, glass blur or a glow? Is the accent on a card one small mark
+  (dot, badge, number or word)? Is the padding generous (about half the title's height or more)
+  and the title clearly heavier than the note?
+- **Fix.** Remove the stripe or outline; put the accent on a dot before the title, a number
+  badge, the key word or the leader's end on the subject; widen the padding; set the title heavier
+  and the note lighter in the secondary ink; lift the card with a soft shadow or a hairline border
+  in the ink at low opacity.
+- **Seen in.** stills, sheet.

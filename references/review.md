@@ -20,9 +20,10 @@ reviewer with a clean context. Give it only these files, by path:
 - the keyframe stills (opening, turn, payoff, end card) and, if useful, a still at the middle of
   each scene-list row exported from the preview with `--still`
 - `aesthetic-rules.md` (from this skill's `references/`)
-- the brand pack, if the film uses one: `inputs/brand/brand.json` and its brand sheet
-  (`node scripts/brand.mjs --sheet inputs/brand --out qa/brand-sheet.png`), for AR-16; see
-  [brand.md](brand.md#in-the-review)
+- the brand pack, if the film uses one (the project's `inputs/brand/` or the user's default,
+  `scripts/brand.mjs --which .`): its `brand.json`, its brand sheet
+  (`node scripts/brand.mjs --sheet <pack> --out qa/brand-sheet.png`) and every document its
+  `rules_docs` lists, for AR-16 and AR-17; see [brand.md](brand.md#in-the-review)
 
 Do not give it the scene source, the timeline code, the conversation, or your own opinion of
 the film. It judges what a viewer can see.
@@ -42,7 +43,8 @@ Adapt the paths; keep the rest.
 > `AR-NN ✓|✗|– · frames or time · what you see · how to fix it` (`–` when these inputs cannot
 > answer the rule, for example audio; also `–` for AR-16 when no brand pack is given). Name
 > frames by the index and time printed on the sheet. With a brand pack, judge AR-16 against its
-> `accent_rules`, `forbid`, `fonts` and `type_scale`, using the brand sheet as the reference.
+> `accent_rules`, `forbid`, `fonts`, `type_scale` and its rules documents, using the brand sheet
+> as the reference.
 > Be specific: “#04 (8.1 s) the cover sits centred on a desk again, same as #01” is useful;
 > “could be more dynamic” is not. After the rules, name the single frame a stranger would
 > screenshot, and the weakest frame. Write the result to `qa/review.md`. Do not edit any other

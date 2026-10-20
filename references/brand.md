@@ -4,6 +4,23 @@ A brand pack is the user's aesthetic contract first and a folder of files second
 type and motion are theirs, how the accent colour may appear, what the brand never does, and
 what it learns from. The user puts it in `inputs/brand/` (or symlinks a folder there).
 
+## The user's default pack
+
+A project without `inputs/brand/` uses the user's default pack, in every mode and every style:
+the folder named by `$VIDEO_ILLUSTRATOR_BRAND` if it is set, else
+`~/.config/video-illustrator/brand/` if it exists. A project's own `inputs/brand/` replaces the
+default entirely (list the same `rules_docs` in it to keep them). `node scripts/brand.mjs --which
+<project>` prints which pack applies (`project`, `env`, `user` or `none`); check that pack and
+say in `brief.md` which one was used. No pack anywhere: work from the style alone.
+
+## Rules documents
+
+`rules_docs` lists the user's own design rules (a visual system, a do-and-don't list), as
+absolute, `~/` or pack-relative paths. They stay where the user keeps them and are read live
+before step 1 designs anything; never copy them into the pack, the scene or the brief, so they
+cannot go stale. Read every listed document in full. `forbid` stays for the short phrases a
+reviewer can check frame by frame; a document holds the reasons and the boundaries.
+
 Two shapes are valid:
 
 - **v1:** a single `brand.json` without `"schema"`: `display_name`, optional `palette`
@@ -34,6 +51,7 @@ resolved (hex colours, fractions, frames); nothing is looked up at render time.
 | `endcard` | An HTML end card that renders on its own | Starting point, not a locked template |
 | `forbid` | Short, checkable phrases: what this brand never does | The reviewer checks frames against them |
 | `references` | `[{url, learn, avoid}]` | What to take from each reference, and what not |
+| `rules_docs` | Paths to the user's own rule documents | Read live, never copied; see above |
 
 `motion` uses the same fields as a style's `## Motion tokens` ([styles.md](styles.md#motion-tokens)),
 written as JSON:
@@ -72,8 +90,11 @@ display face paired with a CJK body face still covers both scripts.
 
 1. **The user's explicit instruction wins.** "Use the ink-wash colours for this one" means
    exactly that, whatever the pack says. Name the instruction in `brief.md`.
-2. **`forbid` beats the style.** When the style card asks for a technique the brand forbids
-   (a halo, a gradient, a glow), the brand wins and the brief says so.
+2. **`forbid` and the `rules_docs` beat the style.** When the style card asks for a technique the
+   brand forbids (a halo, a gradient, a glow, a coloured stripe on one side of a card), the brand
+   wins and the brief says so. The documents govern what they speak to: what never appears, and
+   how the film's own type, cards, labels and accent look; the world's colour follows
+   `palette_scope` (rule 3) unless a document sets it for that medium.
 3. **`palette_scope: "film"` with a named style: the brand decides colour; the style decides
    material, motion and craft.** Ground, ink and accent come from the palette; the style's
    textures, construction, motion tokens and signature craft stay. Write this split into the
@@ -93,8 +114,10 @@ above with how it was resolved.
 
 - `palette_scope: "film"` without `ground`, `ink` or `accent`: **error**, the film cannot be
   coloured from the pack.
-- `accent_rules.max_area` outside (0, 1], a missing file, an invalid hex, an unknown `schema`,
-  JSON that does not parse: **error**.
+- `accent_rules.max_area` outside (0, 1], a missing file (a `rules_docs` entry included), an
+  invalid hex, an unknown `schema`, JSON that does not parse: **error**.
+- `rules_docs` that is not a list: warning. A rules document outside the pack is expected: no
+  warning.
 - A v2 field in a file without `"schema"`: warning; the file is read as v1 and the field ignored.
 - An unknown `palette_scope`: warning, read as `"credits"`.
 - The same phrase in `accent_rules.forms` and `accent_rules.never`: warning.
@@ -107,7 +130,8 @@ node scripts/brand.mjs --check inputs/brand [--tokens upstream-tokens.json]
 node scripts/brand.mjs --sheet inputs/brand --out qa/brand-sheet.png
 ```
 
-`--check` prints `{ok, schema, errors, warnings}` and exits 1 only on an error. Errors are kept
+`--check` prints `{ok, schema, errors, warnings, rules_docs}` (the documents to read) and exits 1
+only on an error. Errors are kept
 for input that cannot be used safely (the list above). Everything else is a warning: unknown
 fields, shapes authors will ignore, contrast under 4.5:1 for ink (3:1 for secondary ink and the
 accent), a font file with no licence file beside it, motion numbers that disagree with each
@@ -125,7 +149,7 @@ user approves the pack from this sheet.
 ## In the review
 
 Whether a film keeps the accent rules or the forbid list is a judgement about pictures, so the
-check never decides it. When a pack is used, give the clean-context reviewer `brand.json` and
-the brand sheet as extra inputs ([review.md](review.md)); it answers AR-16 in
+check never decides it. When a pack is used, give the clean-context reviewer `brand.json`, the
+brand sheet and every `rules_docs` document as extra inputs ([review.md](review.md)); it answers AR-16 in
 [aesthetic-rules.md](aesthetic-rules.md). Like every rule there, AR-16 advises and never blocks
 delivery.

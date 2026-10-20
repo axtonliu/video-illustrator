@@ -36,6 +36,12 @@ On SIGINT/SIGTERM or a crash the CLI removes its .video-illustrator-* staging fo
 const liveTemporaries = new Set();
 const liveChildren = new Set();
 
+// Frames for a duration. Durations usually arrive rounded to the millisecond (32.067 s for 962 frames at 30 fps),
+// which a bare ceil turns into one frame too many; a hair of tolerance keeps whole-frame durations whole.
+export function frameCount(duration, fps) {
+  return Math.max(1, Math.ceil(duration * fps - 0.02));
+}
+
 export function cleanupSync() {
   for (const child of liveChildren) { try { child.kill('SIGKILL'); } catch {} }
   liveChildren.clear();
@@ -214,7 +220,7 @@ export async function render(opts) {
     const probe = JSON.parse(await run('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'json', opts.audio], true));
     const audioSeconds = Number(probe.format?.duration);
     if (!Number.isFinite(audioSeconds) || audioSeconds <= 0) throw Error('Could not determine the source audio duration with ffprobe.');
-    const videoSeconds = Math.ceil(opts.duration * opts.fps) / opts.fps;
+    const videoSeconds = frameCount(opts.duration, opts.fps) / opts.fps;
     if (audioSeconds > videoSeconds + 0.001) {
       const warning = `Source audio is ${audioSeconds.toFixed(3)}s but video is ${videoSeconds.toFixed(3)}s; its tail will be truncated. Match --duration to the source unless this trim is intentional.`;
       warnings.push(warning);
@@ -271,7 +277,7 @@ export async function render(opts) {
       const detail = [...pageErrors, ...new Set(loadProblems)].slice(0, 8).join('; ');
       throw Error(`HTML must expose window.renderFrame(timeSeconds).${detail ? ` Page reported: ${detail}` : ''}`);
     }
-    const count = still ? 1 : Math.ceil(opts.duration * opts.fps);
+    const count = still ? 1 : frameCount(opts.duration, opts.fps);
     // The first frame pays for shader compilation and texture upload, so it is timed apart.
     const timed = { first: 0, frames: 0, draw: 0, capture: 0 };
     for (let frame = 0; frame < count; frame++) {

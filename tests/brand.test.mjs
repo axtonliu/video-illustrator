@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
-import { SCHEMA_V2, checkBrand, contrast, resolveToken } from '../scripts/brand.mjs';
+import { SCHEMA_V2, checkBrand, contrast, findBrandPack, resolveToken } from '../scripts/brand.mjs';
 
 const exec = promisify(execFile);
 const skill = fileURLToPath(new URL('..', import.meta.url));
@@ -37,7 +37,7 @@ const codes = list => list.map(item => item.code);
 const ERROR_CASES = {
   json_parse: [['{ "display_name": "x", }'], ['[1, 2]']],
   schema_unknown: [[{ ...BASE(), schema: 'video-illustrator.brand.v9' }]],
-  file_missing: [[{ ...BASE(), endcard: 'templates/none.html' }], [{ display_name: 'v1', logo: 'logo.svg' }]],
+  file_missing: [[{ ...BASE(), endcard: 'templates/none.html' }], [{ display_name: 'v1', logo: 'logo.svg' }], [{ ...BASE(), rules_docs: ['/no/such/house-rules.md'] }]],
   hex_invalid: [[{ ...BASE(), palette: { ...BASE().palette, accent: 'gold' } }], [{ display_name: 'v1', palette: { ink: '#12345' } }]],
   film_palette_incomplete: [[{ ...BASE(), palette: { ground: '#FFFFFF', ink: '#111111' } }]],
   accent_max_area_range: [[{ ...BASE(), accent_rules: { max_area: 0 } }], [{ ...BASE(), accent_rules: { max_area: 1.5 } }], [{ ...BASE(), accent_rules: { max_area: '8%' } }]]
@@ -75,7 +75,8 @@ const WARNING_CASES = {
   sound_invalid: [{ ...BASE(), sound: 'logo.wav' }],
   endcard_no_render_frame: [{ ...BASE(), endcard: 'end.html' }, { 'end.html': '<p>static</p>' }],
   forbid_invalid: [{ ...BASE(), forbid: 'glow' }],
-  references_invalid: [{ ...BASE(), references: [{ url: 'https://example.com' }] }]
+  references_invalid: [{ ...BASE(), references: [{ url: 'https://example.com' }] }],
+  rules_docs_invalid: [{ ...BASE(), rules_docs: '/abs/rules.md' }]
 };
 
 test('brand check: every error code has a failing case and the CLI exits 1', async t => {
@@ -120,6 +121,37 @@ test('brand check: a v1 single-file brand.json still passes, with and without re
   assert.equal(JSON.parse(stdout).ok, true);
 });
 
+test('brand check: rules_docs are read in place, anywhere on disk, and reported to the author', async t => {
+  const outside = await mkdtemp(path.join(tmpdir(), 'vi house rules '));
+  t.after(() => rm(outside, { recursive: true, force: true }));
+  const doc = path.join(outside, 'house-rules.md');
+  await writeFile(doc, '# House rules\n');
+  const dir = await pack(t, { schema: SCHEMA_V2, display_name: 'Test Studio', rules_docs: [doc, 'local.md'] }, { 'local.md': '# Pack rules\n' });
+  const result = await checkBrand(dir);
+  assert.deepEqual([result.ok, result.warnings], [true, []]);   // outside the pack is the point: no path_outside_pack
+  assert.deepEqual(result.rules_docs, [doc, path.join(result.dir, 'local.md')]);
+  const { stdout } = await cli(['--check', dir]);
+  assert.deepEqual(JSON.parse(stdout).rules_docs, result.rules_docs);
+});
+
+test('brand pack lookup: the project pack, then $VIDEO_ILLUSTRATOR_BRAND, then the user default, else none', async t => {
+  const root = await mkdtemp(path.join(tmpdir(), 'vi brand lookup '));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const project = path.join(root, 'project'), home = path.join(root, 'home'), set = path.join(root, 'set');
+  await mkdir(project, { recursive: true });
+  assert.deepEqual(await findBrandPack(project, { env: {}, home }), { source: 'none', pack: null });
+  const user = path.join(home, '.config/video-illustrator/brand');
+  await mkdir(user, { recursive: true });
+  assert.deepEqual(await findBrandPack(project, { env: {}, home }), { source: 'user', pack: user });
+  await assert.rejects(findBrandPack(project, { env: { VIDEO_ILLUSTRATOR_BRAND: set }, home }), /does not exist/);
+  await mkdir(set);
+  assert.deepEqual(await findBrandPack(project, { env: { VIDEO_ILLUSTRATOR_BRAND: set }, home }), { source: 'env', pack: set });
+  await mkdir(path.join(project, 'inputs/brand'), { recursive: true });
+  assert.deepEqual(await findBrandPack(project, { env: { VIDEO_ILLUSTRATOR_BRAND: set }, home }), { source: 'project', pack: path.join(project, 'inputs/brand') });
+  const { stdout } = await exec(process.execPath, [script, '--which', project]);
+  assert.equal(JSON.parse(stdout).source, 'project');
+});
+
 test('brand check: upstream tokens resolve by name, mode and dotted path', () => {
   const tokens = { tokens: { 'deep.blue': { light: null, dark: '#0A0B0C' }, card: { light: '#FFFFFF', dark: '#222222' }, plain: '#ABC' }, nested: { gold: { $value: '#C0A030' } } };
   assert.deepEqual(resolveToken(tokens, 'deep.blue'), { value: '#0a0b0c' });
@@ -159,14 +191,14 @@ test('brand sheet renders a PNG of the example pack and refuses a pack with erro
 
 // The public package must never carry the author's private brand values. They are listed here
 // only as truncated sha256 hashes so this test does not publish them either.
-const PRIVATE_HEX = new Set(['023c4ecf400435f3', '04a2187397afbfb5', '0e684e516035b04c', '0f176030df855be5', '0fe27ce5ea83f679', '115e018f61071dd4', '13969980f5072d6f', '18d806c6ca01bc25', '1af21c77f83a7edf', '1c969b3999c4c9aa', '1d35b820cb2ae016', '251a7b8506a725c5', '2564b032f47fc718', '2718828c36f3a0e4', '274e12b70e79c579', '367909d8ceaa07ae', '3871da342003cbdb', '3b3e47a0c31f2671', '3c336bc375ff2b73', '3c5c1ab6c5fd2f50', '46461f86fde154d9', '4702b16c05573854', '47f67427412411b1', '5b218e748fdc039f', '64567864cb5dfa7c', '6b3d6d843dfe8b50', '6c1452dd7cd683f6', '6e24f0bb7a41796e', '79af1c5e3883384c', '7ddaced054c40c54', '833631aa325ef0ac', '8b8f7c3d45411fb7', '8fa525d47560b2b4', '9a23a4e9633d7bb1', '9f034e1f1a7709ba', 'a29db4df6d013f7d', 'ab070ae310d3cb61', 'abcaed7d2d373eb9', 'b035e56d5fc637e1', 'b18d2a8829e9e64d', 'b33776ade232bb13', 'b3e081ee5f59ad6b', 'b51de63d0eac0534', 'b5644f835cc8390b', 'b5e2bc59ff0f8c39', 'b7de66eef9225fd9', 'c18d4ec05ca9cda9', 'c36d4cdccdc9ca37', 'c3c303ac03971882', 'c94d0aaf943f4eb6', 'cc168c1102ac5ddf', 'cd095d85aa1779d2', 'd332d925afa0ec9b', 'd972e4a5b30e0040', 'dbd729b0a3fbcb8b', 'df9157ab4b12c275', 'e59f7a91cc64a4a9', 'ea981059a215bbf4', 'f9914777d45c7bae', 'ffe28db32eac7696']);
+const PRIVATE_HEX = new Set(['023c4ecf400435f3', '04a2187397afbfb5', '0e684e516035b04c', '0f176030df855be5', '0fe27ce5ea83f679', '115e018f61071dd4', '13969980f5072d6f', '18d806c6ca01bc25', '1af21c77f83a7edf', '1c969b3999c4c9aa', '1d35b820cb2ae016', '251a7b8506a725c5', '2564b032f47fc718', '2718828c36f3a0e4', '274e12b70e79c579', '367909d8ceaa07ae', '3871da342003cbdb', '3b3e47a0c31f2671', '3c336bc375ff2b73', '3c5c1ab6c5fd2f50', '46461f86fde154d9', '4702b16c05573854', '47f67427412411b1', '5b218e748fdc039f', '64567864cb5dfa7c', '6b3d6d843dfe8b50', '6c1452dd7cd683f6', '6e24f0bb7a41796e', '79af1c5e3883384c', '7ddaced054c40c54', '833631aa325ef0ac', '8b8f7c3d45411fb7', '8fa525d47560b2b4', '9a23a4e9633d7bb1', '9f034e1f1a7709ba', 'a29db4df6d013f7d', 'ab070ae310d3cb61', 'abcaed7d2d373eb9', 'b035e56d5fc637e1', 'b18d2a8829e9e64d', 'b33776ade232bb13', 'b3e081ee5f59ad6b', 'b51de63d0eac0534', 'b5644f835cc8390b', 'b5e2bc59ff0f8c39', 'b7de66eef9225fd9', 'c18d4ec05ca9cda9', 'c36d4cdccdc9ca37', 'c3c303ac03971882', 'c94d0aaf943f4eb6', 'cc168c1102ac5ddf', 'cd095d85aa1779d2', 'd332d925afa0ec9b', 'd972e4a5b30e0040', 'dbd729b0a3fbcb8b', 'df9157ab4b12c275', 'e59f7a91cc64a4a9', 'ea981059a215bbf4', 'f9914777d45c7bae', 'ffe28db32eac7696', '0c0e963a9a20eec6', '0f6387976c866728', '3ee745682b784b07', '4b1254027d0d8b62', '606c7b17f74e44d9', '7f645517325fa7f4', '9160551c5269b0ee', '9419854779e83343', '9b247d63be435a64', 'a3805a817d4f457c', 'b982ff2e78200849', 'd638129a12ec9477']);
 const PRIVATE_WORDS = new Set(['5f02adb12e800b57', '7cadc15d609c4ae9', 'ce3631a6a7b0b82b', '978566a30d7c0064', '9af44644b3f729be', '087e8d27f22996d7', '3997c1a5c704ab24']);
 const hash = text => createHash('sha256').update(text).digest('hex').slice(0, 16);
 
 async function textFiles(directory) {
   const found = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
-    if (['node_modules', '.git', 'videos', 'previews'].includes(entry.name)) continue;
+    if (['node_modules', '.git', 'videos', 'previews', 'outputs', 'gallery'].includes(entry.name)) continue;
     const full = path.join(directory, entry.name);
     if (entry.isDirectory()) found.push(...await textFiles(full));
     else if (/\.(md|json|mjs|js|html|svg|yaml|txt)$/.test(entry.name)) found.push(full);
@@ -202,5 +234,42 @@ test('public package carries no private brand colour, and brand files no private
   }
   // Words are matched whole: common English words that contain a listed word do not trip it.
   assert.equal(PRIVATE_WORDS.size, 7);
+  assert.equal(PRIVATE_HEX.size, 72);
   assert.deepEqual(privateWords('Remember December, members'), []);
+});
+
+// Names of the author's own machine, folders and internal tools, hashed for the same reason.
+// Tokens are lower-cased runs of letters, digits, '-' and '_', and each '-' or '_' part on its own.
+const PRIVATE_TOKENS = new Set(['fc99177f92afe91b', 'ad2089deb65a9555', 'aac4cfdb0df8c83e', 'f8327a0187405a2d', 'faafd43ebc2c2160', '969bf3099b5a11e1', '33da61b627e7b0c1', '9000eb478918b356', '1e7cd4b132c74d31', 'f3a3dfa6f4bef730']);
+const AUTHOR = '5f02adb12e800b57';   // the author's public name, credited in the README and samples
+
+function privateTokens(text) {
+  const found = [];
+  for (const token of text.toLowerCase().match(/[a-z0-9_-]+/g) || []) {
+    for (const part of new Set([token, ...token.split(/[-_]/)])) if (PRIVATE_TOKENS.has(hash(part))) found.push(part);
+  }
+  return found;
+}
+
+const LEAKS = [
+  [/\/(?:Users|Volumes|home)\/[^\s/'"`)]+/, 'an absolute path on the author\'s machine'],
+  [/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/, 'an e-mail address'],
+  [/\b(?:sk-[A-Za-z0-9_-]{20,}|sk-or-v1-[0-9a-f]{20,}|AIza[0-9A-Za-z_-]{30,}|gh[pousr]_[A-Za-z0-9]{30,}|xox[abpr]-[A-Za-z0-9-]{10,})|-----BEGIN [A-Z ]*PRIVATE KEY-----/, 'a key or token']
+];
+
+test('public package names no private path, folder, tool, address or key, and no private brand word anywhere', async () => {
+  for (const file of await textFiles(skill)) {
+    const text = await readFile(file, 'utf8');
+    const name = path.relative(skill, file);
+    for (const [pattern, what] of LEAKS) assert.doesNotMatch(text, pattern, `${name} contains ${what}`);
+    assert.deepEqual(privateTokens(text), [], `${name} names a private folder or internal tool`);
+    assert.deepEqual(privateWords(text).filter(word => hash(word) !== AUTHOR), [], `${name} names the author's private brand`);
+  }
+  assert.equal(PRIVATE_TOKENS.size, 10);
+  // The checks themselves: a home path, a mail address and a key shape are caught; ordinary text is not.
+  assert.match('see /' + 'Users/someone/project', LEAKS[0][0]);   // built in two parts so this file passes its own check
+  assert.match('write to someone' + '@example.org', LEAKS[1][0]);
+  assert.match('key sk-or-v1-' + '0123456789abcdef'.repeat(2), LEAKS[2][0]);
+  assert.doesNotMatch('~/.config/video-illustrator/brand and http://127.0.0.1:3000/a', LEAKS[0][0]);
+  assert.deepEqual(privateTokens('video-illustrator renders scene_craft in three.js'), []);
 });
