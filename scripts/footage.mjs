@@ -23,8 +23,9 @@ node scripts/footage.mjs fetch --candidates candidates.json --out footage/ [--in
 node scripts/footage.mjs clip --input footage/x.mp4 --from 12 --to 19.5 --label "Footage: Tesla launch event" --out clips/x.mp4 [--audio keep|mute] [--fit contain|cover] [--width 1280 --height 720 --fps 30] [--font /path/font.ttf] [--overwrite]
 
 search   appends candidates (title, page, creator, duration, licence) to candidates.json; it never
-         downloads media. Licence class: "open" (Creative Commons or public domain, as the source
-         states it) or "unknown" (every YouTube result, and anything without a stated licence).
+         downloads media. Licence class: "open" (stated Creative Commons without NC/ND, or public
+         domain), "restricted" (NC/noncommercial or ND/no derivatives), or "unknown" (every
+         YouTube result, and anything without a stated licence). Attribution and other terms still apply.
          Each candidate has "approved": null. A person sets it to true or false.
 review   writes an HTML page with thumbnails, licences and links for that decision.
 fetch    downloads candidates with "approved": true, plus "open" ones when --include-open is
@@ -39,7 +40,7 @@ const OPEN = /(^|\b)(cc[ -]?by|cc[ -]?0|cc-by-sa|creative ?commons|public ?domai
 
 export function licenceClass(name, url) {
   const text = `${name || ''} ${url || ''}`;
-  if (/creativecommons\.org|publicdomain/i.test(url || '') || OPEN.test(text)) return /\bnc\b|noncommercial/i.test(text) ? 'restricted' : 'open';
+  if (/creativecommons\.org|publicdomain/i.test(url || '') || OPEN.test(text)) return /\b(?:nc|nd)\b|non[ -]?commercial|no[ -]?derivatives/i.test(text) ? 'restricted' : 'open';
   return 'unknown';
 }
 
@@ -148,7 +149,9 @@ export async function fetchApproved({ table, out, includeOpen, download = defaul
   await mkdir(out, { recursive: true });
   const record = [];
   for (const c of table.items || []) {
-    const why = c.approved === true ? 'approved by a person' : includeOpen && c.approved !== false && c.licence?.class === 'open' ? 'open licence stated by the source' : null;
+    // Older candidate files may still label ND material as open. Recheck the stated terms.
+    const restricted = licenceClass(c.licence?.name, c.licence?.url) === 'restricted';
+    const why = c.approved === true ? 'approved by a person' : includeOpen && c.approved !== false && c.licence?.class === 'open' && !restricted ? 'open licence stated by the source' : null;
     if (!why) continue;
     const file = await download(c, out);
     record.push({ id: c.id, file: path.relative(out, file), sha256: await sha256(file), title: c.title, page: c.page, creator: c.creator ?? null,

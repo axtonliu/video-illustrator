@@ -22,6 +22,14 @@ test('footage: licences are read as the source states them; YouTube is always un
   assert.equal(licenceClass('Public domain'), 'open');
   assert.equal(licenceClass('CC BY-SA 4.0'), 'open');
   assert.equal(licenceClass('', 'https://creativecommons.org/licenses/by-nc-nd/4.0/'), 'restricted');
+  for (const [name, url] of [
+    ['CC BY-ND 4.0', ''], ['', 'https://creativecommons.org/licenses/by-nd/4.0/'],
+    ['Creative Commons Attribution-NoDerivatives 4.0', ''],
+    ['Creative Commons Attribution-No Derivatives 4.0', ''],
+    ['CC BY-NC-ND 4.0', '']
+  ]) assert.equal(licenceClass(name, url), 'restricted', name || url);
+  assert.equal(licenceClass('CC BY 4.0'), 'open');
+  assert.equal(licenceClass('CC0'), 'open');
   assert.equal(licenceClass('', ''), 'unknown');
   const commons = commonsCandidates({ query: { pages: { 7: { pageid: 7, index: 1, title: 'File:Landing.webm', imageinfo: [{ url: 'https://upload.example/Landing.webm?utm=x', descriptionurl: 'https://commons.example/File:Landing.webm', thumburl: 't.jpg', duration: 30.04, width: 1920, height: 1080,
     extmetadata: { LicenseShortName: { value: 'Public domain' }, Artist: { value: '<a href="x">U.S. Space Force</a>' } } }] } } } });
@@ -47,12 +55,18 @@ test('footage: fetch downloads only what a person approved, plus open licences w
   const base = `http://127.0.0.1:${server.address().port}`;
   const item = (id, cls, approved) => ({ id, title: id, page: `${base}/page/${id}`, media: `${base}/${id}.webm`, creator: 'C', licence: { name: cls, class: cls }, approved });
   const table = { items: [item('commons:1', 'unknown', true), item('commons:2', 'unknown', null), item('commons:3', 'open', null), item('commons:4', 'open', false), item('commons:5', 'restricted', null)] };
+  const nd = { ...item('commons:nd', 'restricted', null), licence: { name: 'CC BY-ND 4.0', class: licenceClass('CC BY-ND 4.0') } };
+  table.items.push(nd,
+    { ...nd, id: 'commons:legacy-nd', licence: { name: 'CC BY-ND 4.0', class: 'open' } },
+    { ...nd, id: 'commons:legacy-nd-url', licence: { url: 'https://creativecommons.org/licenses/by-nd/4.0/', class: 'open' } });
   const strict = await fetchApproved({ table, out: path.join(directory, 'a') });
   assert.deepEqual(strict.map(r => [r.id, r.why]), [['commons:1', 'approved by a person']]);
   assert.equal(await readFile(path.join(directory, 'a', strict[0].file), 'utf8'), 'bytes of /commons:1.webm');
   assert.match(strict[0].sha256, /^[0-9a-f]{64}$/);
   const open = await fetchApproved({ table, out: path.join(directory, 'b'), includeOpen: true });
   assert.deepEqual(open.map(r => r.id), ['commons:1', 'commons:3']);
+  const approved = await fetchApproved({ table: { items: [{ ...nd, approved: true }] }, out: path.join(directory, 'c') });
+  assert.deepEqual(approved.map(r => [r.id, r.why]), [['commons:nd', 'approved by a person']]);
 });
 
 test('footage clip letterboxes 4:3, burns the source label top right and keeps normalized sound', async t => {

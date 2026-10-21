@@ -44,4 +44,11 @@ node scripts/footage.mjs fetch --candidates footage/candidates.json --out footag
 node scripts/footage.mjs clip --input footage/<file> --from 12 --to 19.5 --label "Footage: <source>" --out clips/<name>.mp4
 ```
 
+`--include-open` does not auto-select NC (noncommercial) or ND (no derivatives) material:
+these are `restricted` and need an explicit `"approved": true` after checking the intended use.
+ND allows sharing under its terms but does not permit distributing adaptations; downloading
+alone is not an adaptation. See the [CC BY-ND terms](https://creativecommons.org/licenses/by-nd/4.0/).
+`open` is a selection category, not a waiver of attribution, ShareAlike or other licence terms.
+Older candidates labelled `open` are rechecked for NC/ND before automatic selection.
+
 `fetch` records file, SHA-256, licence and attribution in `footage/footage.json`; list them in the delivery and the publish notes. `clip` keeps archive 4:3 letterboxed instead of cropping, burns the source label in the top-right corner in the film's language, and keeps the original sound at -17 LUFS (`--audio mute` drops it). Do not cut footage so that it changes what happened (a demo presented as a test, a plan as a result).

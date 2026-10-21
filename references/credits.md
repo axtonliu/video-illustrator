@@ -21,13 +21,13 @@ Public projects that informed the product exploration:
 `cinematic.md` and the audio-first workflow in `rendering.md` adapt ideas, rewritten
 in our own words, from:
 
-- The Lemo-Opuscar directing and technique guides (`DIRECTOR.md`, `TECHNIQUE.md`),
-  © Lemomo, licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/):
-  every visible action has a sound, the music grid comes before animation, one
-  shared timeline drives picture and sound, reading-time holds scaled by line length,
-  ducking music under voice and a −14 LUFS delivery target. Changes: condensed,
-  reworded and adapted to this Skill's single-file `renderFrame(t)` renderer and
-  Node audio scripts.
+- [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar), by Lemomo, informed the
+  directing and audio-first ideas: sound accompanying visible action, planning on a music
+  grid, a shared picture-and-sound timeline, reading-time holds, voice ducking and a
+  −14 LUFS delivery target. This is an acknowledgement of ideas, not an import of its
+  guides, code, prompts or media. The guidance and Node audio scripts here were written
+  for this Skill's single-file `renderFrame(t)` renderer. For reuse of material from
+  Lemo-Opuscar itself, consult that project's licence for the specific material and version.
 - The treatment and engine notes of the “I'm Upping My P(doom)” music-video project,
   [mexicat/pdoom-video](https://github.com/mexicat/pdoom-video) by mexicat (its code is released under the MIT License): big changes landing on downbeats, strong eases with holds then snaps,
   and one recurring motif that escalates across the film. No code was copied.
@@ -83,7 +83,9 @@ or adapted implementation needs its own attribution and license review.
 
 ### Showcase media
 
-The homepage showcase films' music was generated with Google Lyria 3 clips through the
-author's own OpenRouter account. No audio file is distributed with this package. The
+The Skill-made homepage samples (1–5, 7 and 8) use Google Lyria 3 clips generated through
+the author's own OpenRouter account. Sample 9 is silent. The separate brick-world reference
+(sample 6) has no music-source or music-licence record in this package; its music is not
+covered by the Lyria statement. No audio file is distributed with this package. The
 films, previews and posters are not covered by the MIT license; see
 [showcase/SAMPLES.md](../showcase/SAMPLES.md).
