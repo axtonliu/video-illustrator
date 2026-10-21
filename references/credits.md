@@ -85,7 +85,7 @@ or adapted implementation needs its own attribution and license review.
 
 The Skill-made homepage samples (1–5, 7 and 8) use Google Lyria 3 clips generated through
 the author's own OpenRouter account. Sample 9 is silent. The separate brick-world reference
-(sample 6) has no music-source or music-licence record in this package; its music is not
-covered by the Lyria statement. No audio file is distributed with this package. The
+(sample 6) uses generated music or music the author has rights to use, as confirmed by
+the author. It is not attributed to a specific generator here. No audio file is distributed with this package. The
 films, previews and posters are not covered by the MIT license; see
 [showcase/SAMPLES.md](../showcase/SAMPLES.md).

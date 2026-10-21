@@ -411,9 +411,10 @@ Play directly (16:9, 1280×720): [diagram-3d](https://img.axtonliu.com/video-ill
 - In that published film the two narration lines used here are far apart; this cut joins
   them, so there is one visible jump cut.
 - Length: 23.4 s. Time and cost are outside this Skill's records and are not reported here.
-- Music source and licence evidence for this separately produced film are not recorded in
-  this package. The Lyria statements for Skill-made samples do not apply to it; this
-  reference does not grant permission to reuse its soundtrack.
+- **Music**: the author confirms that the music used is generated music or music they
+  have rights to use. Specific tracks and generation services are not identified here;
+  the Lyria statements for Skill-made samples do not apply to this separate production.
+  This reference does not grant permission to reuse its soundtrack.
 
 ## Other styles made in the same batch
 
