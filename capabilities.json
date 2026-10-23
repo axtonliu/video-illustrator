@@ -1,0 +1,22 @@
+{
+  "schema": "video-illustrator.capabilities.v1",
+  "_doc": "What this skill can do for a host pipeline, one entry per capability: a stable id, the file that is the entry point, and one line on what it does. Hosts that orchestrate several skills (for example a production pipeline that calls this one for its explainer stages) read this list to check that every capability is wired or deliberately left out. Add an entry when a new script or template becomes usable on its own; keep ids stable.",
+  "capabilities": [
+    { "id": "facts", "entry": "scripts/facts.mjs", "does": "Check and export the episode's fact table; check that the script only cites facts that exist; list sources for the publish notes." },
+    { "id": "explain", "entry": "scripts/explain.mjs", "does": "Check the explanation plan (one signature idea, an explanation and a demonstration per concept) against the script." },
+    { "id": "footage", "entry": "scripts/footage.mjs", "does": "Find real footage candidates with their licences, download only approved ones, cut labelled clips." },
+    { "id": "align", "entry": "scripts/align.mjs", "does": "Transcribe one narration take, align it to the script, split it into segments and time every line and word." },
+    { "id": "onsets", "entry": "scripts/onsets.mjs", "does": "Snap cue starts to measured speech onsets." },
+    { "id": "excerpt", "entry": "scripts/excerpt.mjs", "does": "Cut one window of audio and subtitles out of a longer narrated video." },
+    { "id": "render", "entry": "scripts/render.mjs", "does": "Render a local HTML scene that exposes window.renderFrame(t) to MP4." },
+    { "id": "mechanism-template-3d", "entry": "references/mechanism-template.html", "does": "Starting scene for a bright 3D mechanism segment (subjects, links, steps, safe area)." },
+    { "id": "mechanism-template-2d", "entry": "references/mechanism-template-2d.html", "does": "Starting scene for a 2D mechanism segment on the same contract." },
+    { "id": "three-template", "entry": "references/three-template.html", "does": "Starting scene for a general three.js illustration." },
+    { "id": "brand", "entry": "scripts/brand.mjs", "does": "Check a brand pack and render its brand sheet." },
+    { "id": "episode", "entry": "scripts/episode.mjs", "does": "Render each segment (reusing unchanged ones by hash), join them under the narration, optionally burn word-by-word captions." },
+    { "id": "contact", "entry": "scripts/contact.mjs", "does": "Contact sheet, distinct-scene count, real-asset screen time and motion checks for a rendered clip." },
+    { "id": "sfx", "entry": "scripts/sfx.mjs", "does": "Synthesize deterministic sound effects and record their peaks." },
+    { "id": "beats", "entry": "scripts/beats.mjs", "does": "Estimate tempo, beat grid and strong onsets of an audio file." },
+    { "id": "music", "entry": "scripts/music.mjs", "does": "Generate a music bed with Google Lyria (paid, the user's own key)." }
+  ]
+}

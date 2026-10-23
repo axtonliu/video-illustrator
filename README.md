@@ -64,6 +64,8 @@ For cinematic or trailer requests the Skill takes a 3D route (three.js on your G
 
 **Explainer mode** (new in 0.7) is for narration you already have. Give it your video's subtitles and a time window, and it cuts that passage (`scripts/excerpt.mjs`), shows what the narration describes as a few persistent parts with things moving between them, each change landing on the sentence that says it, and returns silent 16:9 and 9:16 inserts for your own edit plus narrated, captioned previews. See [explainer.md](references/explainer.md).
 
+**Episode mode** (new in 0.9) makes a whole narrated science or tech explainer of two to ten minutes: an angle, research into a fact table where every number on screen is cited, an explanation plan, a segmented script, official footage, one 3D or 2D scene that carries the mechanism, alignment of your narration take, and a captioned master, rendered segment by segment so a change re-renders only that segment. Bring the narration yourself: your own recording, or an export from the voice service you use; the Skill aligns to it and does not synthesise a voice. The Roadster episode was made this way. See [episode.md](references/episode.md).
+
 Since 0.9 every mode picks its look from the same style atlas: explainers and whole episodes default to a bright 3D diagram look (`diagram-3d`), and can instead use any atlas style that can carry a mechanism, on the 3D route or on a 2D starter that reads the same content (for example particles or cut paper). The atlas says which styles fit and why the others do not ([styles.md](references/styles.md#carrying-an-explainer--讲解承载)).
 
 ## Install
@@ -100,6 +102,7 @@ Early preview, best-effort maintenance. This is code-driven animation, not a pho
 - [Credits](references/credits.md): research acknowledgments and third-party licenses.
 - [Rendering](references/rendering.md): renderer contract, drafts, audio-first workflow.
 - [Explainer mode](references/explainer.md): turn one passage of an existing narrated video into a mechanism insert.
+- [Episode mode](references/episode.md): a whole narrated explainer, from research to a captioned master.
 
 ## License and author
 
